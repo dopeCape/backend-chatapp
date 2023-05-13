@@ -6,7 +6,9 @@
   "license": "MIT",
   "scripts": {
     "dev": "tsc-watch  --compiler /usr/bin/tsc --onSuccess \" cross-env ENV='dev' node ./dist/index.js \" ",
-    "test": "yarn node --experimental-vm-modules  $(yarn bin jest ) --config ././jest.config.js --detectOpenHandles --TEST=ALL  "
+    "test": "yarn node --experimental-vm-modules  $(yarn bin jest ) --config ././jest.config.js --detectOpenHandles --TEST=ALL  ",
+    "build": "tsc",
+    "run": "node dist/index.js"
   },
   "dependencies": {
     "@babel/preset-env": "^7.21.5",
