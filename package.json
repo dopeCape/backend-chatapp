@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "tsc-watch  --compiler /usr/bin/tsc --onSuccess \" cross-env ENV='dev' node ./dist/index.js \" ",
     "test": "yarn node --experimental-vm-modules  $(yarn bin jest ) --config ././jest.config.js --detectOpenHandles --TEST=ALL  ",
-    "build": "yarn add",
+    "build": "npm i",
     "start": "node dist/index.js"
   },
   "dependencies": {
