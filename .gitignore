@@ -1,6 +1,6 @@
 node_modules
 .env
-src/firebaseconfig.json
+firebaseconfig.json
 dist/firebaseconfig.json
 package-lock.json
 
