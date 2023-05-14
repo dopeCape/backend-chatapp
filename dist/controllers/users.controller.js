@@ -125,7 +125,11 @@ function handleSendRequest(data, channel) {
         let [from, to] = data;
         try {
             let [_, user] = yield (0, user_module_1.sendRequest)(from, to);
-            channel.publish("send-request", user);
+            if (user == "request already sent") {
+            }
+            else {
+                channel.publish("send-request", user);
+            }
         }
         catch (error) {
             throw error;

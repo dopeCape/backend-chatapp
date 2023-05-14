@@ -407,22 +407,33 @@ async function sendRequest(from, to) {
         profilePic: to_user.profilePic,
         pending: from,
       };
-      from_user.friends.push(to_user_);
+      let y = true;
+      from_user.friends.forEach((x) => {
+        if (x.userId === to) {
+          y = false;
+        }
+      });
 
-      to_user.friends.push(from_user_);
-      try {
-        let user_from_send = await collection.findOneAndUpdate(
-          { userId: from },
-          from_user
-        );
+      if (y) {
+        from_user.friends.push(to_user_);
 
-        let user_to_send = await collection.findOneAndUpdate(
-          { userId: to },
-          to_user
-        );
-        return [from_user, to_user];
-      } catch (error) {
-        throw error;
+        to_user.friends.push(from_user_);
+        try {
+          let user_from_send = await collection.findOneAndUpdate(
+            { userId: from },
+            from_user
+          );
+
+          let user_to_send = await collection.findOneAndUpdate(
+            { userId: to },
+            to_user
+          );
+          return [from_user, to_user];
+        } catch (error) {
+          throw error;
+        }
+      } else {
+        return ["request already sent", "request already sent"];
       }
     } catch (error) {
       throw error;

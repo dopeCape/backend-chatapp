@@ -114,7 +114,10 @@ async function handleSendRequest(data, channel) {
   let [from, to] = data;
   try {
     let [_, user] = await sendRequest(from, to);
-    channel.publish("send-request", user);
+    if (user == "request already sent") {
+    } else {
+      channel.publish("send-request", user);
+    }
   } catch (error) {
     throw error;
   }
@@ -151,7 +154,6 @@ async function handleBlockUser(data, channel) {
   let [from, to] = data;
   try {
     let to_user = await blockRequest(from, to);
-
     channel.publish("block-request", to_user);
   } catch (error) {
     throw error;
