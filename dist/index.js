@@ -49,6 +49,4 @@ function start() {
         });
     });
 }
-if (process.env.ENV === ("dev" || "prod")) {
-    start();
-}
+start();
