@@ -33,17 +33,18 @@ function ably_endpoints() {
         server_channel.subscribe("accept-request", (msg) => {
             let from = msg.data.from;
             let to = msg.data.to;
+            let chatId = msg.data.chatId;
             let from_channel = ably_client.channels.get(from);
-            (0, users_controller_1.handleAcceptRequest)([from, to], from_channel);
+            (0, users_controller_1.handleAcceptRequest)([from, to, chatId], from_channel);
         });
         server_channel.subscribe("reject-request", (msg) => {
             let from = msg.data.from;
             let to = msg.data.to;
+            let chatId = msg.data.chatId;
             let from_channel = ably_client.channels.get(from);
-            (0, users_controller_1.handleRejectRequest)([from, to], from_channel);
+            (0, users_controller_1.handleRejectRequest)([from, to, chatId], from_channel);
         });
         server_channel.subscribe("block-request", (msg) => {
-            console.log(msg.data);
             let from = msg.data.from;
             let to = msg.data.to;
             let from_channel = ably_client.channels.get(to);
@@ -56,7 +57,6 @@ function ably_endpoints() {
             (0, users_controller_1.handleUnBlockUser)([from, to], from_channel);
         });
         server_channel.subscribe("remove-request", (msg) => {
-            console.log(msg.data);
             let from = msg.data.from;
             let to = msg.data.to;
             let from_channel = ably_client.channels.get(to);

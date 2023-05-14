@@ -11,7 +11,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.removeFriendRequest = exports.blockRequest = exports.unBlockRequest = exports.sendRequest = exports.acceptRequest = exports.rejectRequest = exports.searchUsers = exports.findUserName = exports.getUserData = exports.setPending = exports.blockFriend = exports.removeFriend = exports.createUser = exports.addFriend = exports.deleteAllUsers = void 0;
 const db_config_1 = require("../config/db.config");
-const uuid_1 = require("uuid");
 function getUserData(userId) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -208,14 +207,25 @@ function searchUsers(query) {
     });
 }
 exports.searchUsers = searchUsers;
-function acceptRequest(from, to) {
+function acceptRequest(from, to, chatId) {
     return __awaiter(this, void 0, void 0, function* () {
+        console.log(chatId);
         try {
             let collection = yield (0, db_config_1.getUserCollection)();
+            let msg_collection = yield (0, db_config_1.getMsgCollection)();
             try {
                 let from_user = yield collection.findOne({ userId: from });
                 let to_user = yield collection.findOne({ userId: to });
-                let chatId = (0, uuid_1.v4)();
+                let msg = yield msg_collection.findOne({ chatId: chatId });
+                console.log(msg);
+                if (msg === null) {
+                    try {
+                        msg_collection.create({ chatId: chatId, msges: [] });
+                    }
+                    catch (error) {
+                        throw error;
+                    }
+                }
                 from_user.friends.forEach((x) => {
                     if (x.userId == to) {
                         x.pending = "accepted";
@@ -231,7 +241,7 @@ function acceptRequest(from, to) {
                 try {
                     let user_from_send = yield collection.findOneAndUpdate({ userId: from }, from_user);
                     let user_to_send = yield collection.findOneAndUpdate({ userId: to }, to_user);
-                    return from_user;
+                    return [from_user, chatId];
                 }
                 catch (error) {
                     throw error;

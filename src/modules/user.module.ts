@@ -1,4 +1,4 @@
-import { getUserCollection } from "../config/db.config";
+import { getMsgCollection, getUserCollection } from "../config/db.config";
 import { v4 } from "uuid";
 
 async function getUserData(userId) {
@@ -176,13 +176,26 @@ async function searchUsers(query) {
     throw error;
   }
 }
-async function acceptRequest(from, to) {
+async function acceptRequest(from, to, chatId) {
+  console.log(chatId);
+
   try {
     let collection = await getUserCollection();
+    let msg_collection = await getMsgCollection();
     try {
       let from_user = await collection.findOne({ userId: from });
       let to_user = await collection.findOne({ userId: to });
-      let chatId = v4();
+
+      let msg = await msg_collection.findOne({ chatId: chatId });
+
+      console.log(msg);
+      if (msg === null) {
+        try {
+          msg_collection.create({ chatId: chatId, msges: [] });
+        } catch (error) {
+          throw error;
+        }
+      }
 
       from_user.friends.forEach((x) => {
         if (x.userId == to) {
@@ -194,7 +207,6 @@ async function acceptRequest(from, to) {
       to_user.friends.forEach((x) => {
         if (x.userId == from) {
           x.pending = "accepted";
-
           x.chatId = chatId;
         }
       });
@@ -208,7 +220,7 @@ async function acceptRequest(from, to) {
           { userId: to },
           to_user
         );
-        return from_user;
+        return [from_user, chatId];
       } catch (error) {
         throw error;
       }

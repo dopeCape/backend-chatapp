@@ -30,7 +30,9 @@ function handleGetUserData(req, res, next) {
             let msg = [];
             yield Promise.all(user_data.friends.map((x) => __awaiter(this, void 0, void 0, function* () {
                 let msg_ = yield (0, msges_module_1.getAllMsges)(x.chatId);
-                msg.push(msg_);
+                if (msg_ !== null) {
+                    msg.push(msg_);
+                }
             })));
             res.json({ user_data, ably_token, msg });
             res.status(201);
@@ -143,10 +145,10 @@ function handleDelteAllUsers(req, res) {
 exports.handleDelteAllUsers = handleDelteAllUsers;
 function handleAcceptRequest(data, channel) {
     return __awaiter(this, void 0, void 0, function* () {
-        let [from, to] = data;
+        let [from, to, chatId] = data;
         try {
-            let from_user = yield (0, user_module_1.acceptRequest)(from, to);
-            channel.publish("accept-request", from_user);
+            let [from_user] = yield (0, user_module_1.acceptRequest)(from, to, chatId);
+            channel.publish("accept-request", { from_user, chatId });
         }
         catch (error) {
             throw error;

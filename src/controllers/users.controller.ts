@@ -32,7 +32,9 @@ async function handleGetUserData(req, res, next) {
       user_data.friends.map(async (x) => {
         let msg_ = await getAllMsges(x.chatId);
 
-        msg.push(msg_);
+        if (msg_ !== null) {
+          msg.push(msg_);
+        }
       })
     );
 
@@ -126,11 +128,10 @@ async function handleDelteAllUsers(req, res) {
 }
 
 async function handleAcceptRequest(data, channel) {
-  let [from, to] = data;
+  let [from, to, chatId] = data;
   try {
-    let from_user = await acceptRequest(from, to);
-
-    channel.publish("accept-request", from_user);
+    let [from_user] = await acceptRequest(from, to, chatId);
+    channel.publish("accept-request", { from_user, chatId });
   } catch (error) {
     throw error;
   }
