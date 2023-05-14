@@ -1,8 +1,9 @@
-import admin from "firebase-admin";
-import fig from "../firebaseconfig.json";
+const admin = require("firebase-admin");
+
+const fig = require("../../../firebaseconfig.json");
 
 admin.initializeApp({
   credential: admin.credential.cert(fig),
 });
 
-export { admin };
+module.exports.admin = admin;
