@@ -11,6 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.removeFriendRequest = exports.blockRequest = exports.unBlockRequest = exports.sendRequest = exports.acceptRequest = exports.rejectRequest = exports.searchUsers = exports.findUserName = exports.getUserData = exports.setPending = exports.blockFriend = exports.removeFriend = exports.createUser = exports.addFriend = exports.deleteAllUsers = void 0;
 const db_config_1 = require("../config/db.config");
+const helper_1 = require("../utils/helper");
 function getUserData(userId) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -226,18 +227,24 @@ function acceptRequest(from, to, chatId) {
                         throw error;
                     }
                 }
-                from_user.friends.forEach((x) => {
+                let from_index;
+                from_user.friends.forEach((x, i) => {
                     if (x.userId == to) {
+                        from_index = i;
                         x.pending = "accepted";
                         x.chatId = chatId;
                     }
                 });
-                to_user.friends.forEach((x) => {
+                from_user.friends = (0, helper_1.array_move)(from_user.friends, from_index, 0);
+                let to_index;
+                to_user.friends.forEach((x, i) => {
                     if (x.userId == from) {
                         x.pending = "accepted";
                         x.chatId = chatId;
+                        to_index = i;
                     }
                 });
+                to_user.friends = (0, helper_1.array_move)(to_user.friends, to_index, 0);
                 try {
                     let user_from_send = yield collection.findOneAndUpdate({ userId: from }, from_user);
                     let user_to_send = yield collection.findOneAndUpdate({ userId: to }, to_user);
@@ -264,16 +271,22 @@ function rejectRequest(from, to) {
             try {
                 let from_user = yield collection.findOne({ userId: from });
                 let to_user = yield collection.findOne({ userId: to });
-                from_user.friends.forEach((x) => {
+                let from_index;
+                from_user.friends.forEach((x, i) => {
                     if (x.userId == to) {
+                        from_index = i;
                         x.pending = "rejected";
                     }
                 });
-                to_user.friends.forEach((x) => {
+                from_user.friends = (0, helper_1.array_move)(from_user.friends, from_index, 0);
+                let to_index;
+                to_user.friends.forEach((x, i) => {
                     if (x.userId == from) {
                         x.pending = "rejected";
+                        to_index = i;
                     }
                 });
+                to_user.friends = (0, helper_1.array_move)(to_user.friends, to_index, 0);
                 try {
                     let user_from_send = yield collection.findOneAndUpdate({ userId: from }, from_user);
                     let user_to_send = yield collection.findOneAndUpdate({ userId: to }, to_user);
@@ -338,12 +351,12 @@ function unBlockRequest(from, to) {
                 let to_user = yield collection.findOne({ userId: to });
                 from_user.friends.forEach((x) => {
                     if (x.userId == to) {
-                        x.blocked = "";
+                        x.blocked = "unblocked";
                     }
                 });
                 to_user.friends.forEach((x) => {
                     if (x.userId == from) {
-                        x.blocked = "";
+                        x.blocked = "unblocked";
                     }
                 });
                 try {
@@ -423,8 +436,8 @@ function sendRequest(from, to) {
                     }
                 });
                 if (y) {
-                    from_user.friends.push(to_user_);
-                    to_user.friends.push(from_user_);
+                    from_user.friends.unshift(to_user_);
+                    to_user.friends.unshift(from_user_);
                     try {
                         let user_from_send = yield collection.findOneAndUpdate({ userId: from }, from_user);
                         let user_to_send = yield collection.findOneAndUpdate({ userId: to }, to_user);

@@ -144,7 +144,7 @@ async function handleRejectRequest(data, channel) {
   try {
     let from_user = await rejectRequest(from, to);
 
-    channel.publish("reject-request", from_user);
+    channel.publish("reject-request", { from_user, to });
   } catch (error) {
     throw error;
   }
@@ -154,7 +154,7 @@ async function handleBlockUser(data, channel) {
   let [from, to] = data;
   try {
     let to_user = await blockRequest(from, to);
-    channel.publish("block-request", to_user);
+    channel.publish("block-request", { to_user, from });
   } catch (error) {
     throw error;
   }
@@ -164,7 +164,7 @@ async function handleUnBlockUser(data, channel) {
   try {
     let to_user = await unBlockRequest(from, to);
 
-    channel.publish("unblock-request", to_user);
+    channel.publish("unblock-request", { to_user, from });
   } catch (error) {
     throw error;
   }

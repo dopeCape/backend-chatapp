@@ -165,7 +165,7 @@ function handleRejectRequest(data, channel) {
         let [from, to] = data;
         try {
             let from_user = yield (0, user_module_1.rejectRequest)(from, to);
-            channel.publish("reject-request", from_user);
+            channel.publish("reject-request", { from_user, to });
         }
         catch (error) {
             throw error;
@@ -178,7 +178,7 @@ function handleBlockUser(data, channel) {
         let [from, to] = data;
         try {
             let to_user = yield (0, user_module_1.blockRequest)(from, to);
-            channel.publish("block-request", to_user);
+            channel.publish("block-request", { to_user, from });
         }
         catch (error) {
             throw error;
@@ -191,7 +191,7 @@ function handleUnBlockUser(data, channel) {
         let [from, to] = data;
         try {
             let to_user = yield (0, user_module_1.unBlockRequest)(from, to);
-            channel.publish("unblock-request", to_user);
+            channel.publish("unblock-request", { to_user, from });
         }
         catch (error) {
             throw error;

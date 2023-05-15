@@ -1,5 +1,6 @@
 import { getMsgCollection, getUserCollection } from "../config/db.config";
 import { v4 } from "uuid";
+import { array_move } from "../utils/helper";
 
 async function getUserData(userId) {
   try {
@@ -197,19 +198,27 @@ async function acceptRequest(from, to, chatId) {
         }
       }
 
-      from_user.friends.forEach((x) => {
+      let from_index;
+      from_user.friends.forEach((x, i) => {
         if (x.userId == to) {
+          from_index = i;
           x.pending = "accepted";
           x.chatId = chatId;
         }
       });
 
-      to_user.friends.forEach((x) => {
+      from_user.friends = array_move(from_user.friends, from_index, 0);
+
+      let to_index;
+      to_user.friends.forEach((x, i) => {
         if (x.userId == from) {
           x.pending = "accepted";
           x.chatId = chatId;
+          to_index = i;
         }
       });
+
+      to_user.friends = array_move(to_user.friends, to_index, 0);
       try {
         let user_from_send = await collection.findOneAndUpdate(
           { userId: from },
@@ -238,17 +247,25 @@ async function rejectRequest(from, to) {
       let from_user = await collection.findOne({ userId: from });
       let to_user = await collection.findOne({ userId: to });
 
-      from_user.friends.forEach((x) => {
+      let from_index;
+      from_user.friends.forEach((x, i) => {
         if (x.userId == to) {
+          from_index = i;
           x.pending = "rejected";
         }
       });
 
-      to_user.friends.forEach((x) => {
+      from_user.friends = array_move(from_user.friends, from_index, 0);
+
+      let to_index;
+      to_user.friends.forEach((x, i) => {
         if (x.userId == from) {
           x.pending = "rejected";
+          to_index = i;
         }
       });
+
+      to_user.friends = array_move(to_user.friends, to_index, 0);
       try {
         let user_from_send = await collection.findOneAndUpdate(
           { userId: from },
@@ -319,13 +336,13 @@ async function unBlockRequest(from, to) {
 
       from_user.friends.forEach((x) => {
         if (x.userId == to) {
-          x.blocked = "";
+          x.blocked = "unblocked";
         }
       });
 
       to_user.friends.forEach((x) => {
         if (x.userId == from) {
-          x.blocked = "";
+          x.blocked = "unblocked";
         }
       });
       try {
@@ -415,9 +432,9 @@ async function sendRequest(from, to) {
       });
 
       if (y) {
-        from_user.friends.push(to_user_);
+        from_user.friends.unshift(to_user_);
 
-        to_user.friends.push(from_user_);
+        to_user.friends.unshift(from_user_);
         try {
           let user_from_send = await collection.findOneAndUpdate(
             { userId: from },
