@@ -1,3 +1,4 @@
+//imports
 import Express, { Application, Request, Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -5,35 +6,29 @@ import morgan from "morgan";
 import { connectDB } from "./config/db.config";
 import { verifyUser } from "./middleware/auth.middleware";
 import { userRouter } from "./routes/user.router";
-
-import {
-  handleDelteAllUsers,
-  handleSendRequest,
-} from "./controllers/users.controller";
-import Ably from "ably";
 import { ably_endpoints } from "./services/ably.service";
-import { deleteAllUsers } from "./modules/user.module";
 import { msgRouter } from "./routes/msges.router";
+//end
 
+//for reading env files.
 dotenv.config();
 
 export const app: Application = Express();
-const port: Number | String = process.env.PORT || 9000;
+const port: Number | String = process.env.PORT || 9000; //env.PORT for getting port number allocted by backend
 
 app.use(Express.json());
-app.use(cors());
-app.use(morgan("tiny"));
+app.use(cors()); // to avoid cors errors
+app.use(morgan("tiny")); //to log every request to rest api
 
 ably_endpoints(); //to register alby endpoints .
 
-app.get("/test", verifyUser, (req: Request, res: Response): void => {
-  res.send("hee");
+app.get("/test", verifyUser, (_: Request, res: Response): void => {
+  res.send("applicion works");
 });
 
-app.get("/delete", handleDelteAllUsers);
-
-app.use("/user", userRouter);
-app.use("/msges", msgRouter);
+app.use("/user", userRouter); //users router
+app.use("/msges", msgRouter); //msges router
+// l
 async function start() {
   try {
     await connectDB();
@@ -45,4 +40,4 @@ async function start() {
   });
 }
 
-start();
+start(); //main function

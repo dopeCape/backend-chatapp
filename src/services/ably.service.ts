@@ -10,15 +10,16 @@ import {
 } from "../controllers/users.controller";
 import { handleDeleteMsg, handleNewMsg } from "../controllers/msg.controller";
 
-dotenv.config();
+dotenv.config(); //to read env files
 
-const ably_key = process.env.ABLY;
+const ably_key = process.env.ABLY; //ably api key
 
 const ably_client = new Ably.Realtime.Promise(ably_key);
 
 async function ably_endpoints() {
-  let server_channel = ably_client.channels.get("server");
+  let server_channel = ably_client.channels.get("server"); // it is the main channel that every client connects to in order to make realtime cooms.
 
+  //when client sends request to another client
   server_channel.subscribe("send-request", (msg) => {
     let from = msg.data.from;
     let to = msg.data.to;
@@ -26,6 +27,7 @@ async function ably_endpoints() {
     handleSendRequest([from, to], to_channel);
   });
 
+  //when client accepts the request
   server_channel.subscribe("accept-request", (msg) => {
     let from = msg.data.from;
     let to = msg.data.to;
@@ -35,6 +37,8 @@ async function ably_endpoints() {
 
     handleAcceptRequest([from, to, chatId], from_channel);
   });
+
+  //when client rejects the request
   server_channel.subscribe("reject-request", (msg) => {
     let from = msg.data.from;
     let to = msg.data.to;
@@ -43,6 +47,8 @@ async function ably_endpoints() {
 
     handleRejectRequest([from, to, chatId], from_channel);
   });
+
+  //when client  blocks the a user
   server_channel.subscribe("block-request", (msg) => {
     let from = msg.data.from;
     let to = msg.data.to;
@@ -50,6 +56,8 @@ async function ably_endpoints() {
 
     handleBlockUser([from, to], from_channel);
   });
+
+  //when client  unblocks the a user
   server_channel.subscribe("unblock-request", (msg) => {
     let from = msg.data.from;
     let to = msg.data.to;
@@ -57,6 +65,8 @@ async function ably_endpoints() {
 
     handleUnBlockUser([from, to], from_channel);
   });
+
+  //when client  removes  a user as a friend
   server_channel.subscribe("remove-request", (msg) => {
     let from = msg.data.from;
     let to = msg.data.to;
@@ -66,16 +76,12 @@ async function ably_endpoints() {
   });
 
   server_channel.subscribe("new-msg", (data) => {
-    console.log(data.data);
-
     let channel = ably_client.channels.get(data.data.to);
     let from_channel = ably_client.channels.get(data.data.from);
 
     handleNewMsg(data.data, channel, from_channel);
   });
   server_channel.subscribe("delete-msg", (data) => {
-    console.log(data.data);
-
     let channel = ably_client.channels.get(data.data.to);
 
     handleDeleteMsg(data.data, channel);

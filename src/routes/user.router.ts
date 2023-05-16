@@ -11,7 +11,6 @@ import { verifyUser } from "../middleware/auth.middleware";
 const userRouter = Router();
 
 userRouter.get("/:userId", verifyUser, handleGetUserData);
-
 userRouter.post("/", verifyUser, handleSetUserData);
 userRouter.post("/chelck", handleChelckUserName);
 userRouter.post("/gauth", verifyUser, handleGauth);
