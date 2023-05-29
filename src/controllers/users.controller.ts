@@ -127,7 +127,7 @@ async function handleDelteAllUsers(req, res) {
   try {
     await deleteAllUsers();
     res.send("delted all users");
-  } catch (error) { }
+  } catch (error) {}
 }
 
 async function handleAcceptRequest(data, channel) {
@@ -180,6 +180,21 @@ async function handleRemoveFriend(data, channel) {
   }
 }
 
+async function handleUserTyping(data, channel) {
+  let [from, to, chatId] = data;
+
+  try {
+    channel.publish("user-typing", { from, chatId });
+  } catch (error) {}
+}
+async function handleUserNotTyping(data, channel) {
+  let [from, to, chatId] = data;
+
+  try {
+    channel.publish("user-typing", { from, chatId });
+  } catch (error) {}
+}
+
 export {
   handleGetUserData,
   handleSetUserData,
@@ -193,4 +208,6 @@ export {
   handleRejectRequest,
   handleBlockUser,
   handleUnBlockUser,
+  handleUserTyping,
+  handleUserNotTyping,
 };

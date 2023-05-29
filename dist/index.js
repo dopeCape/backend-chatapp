@@ -13,6 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.app = void 0;
+//imports
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
@@ -20,22 +21,23 @@ const morgan_1 = __importDefault(require("morgan"));
 const db_config_1 = require("./config/db.config");
 const auth_middleware_1 = require("./middleware/auth.middleware");
 const user_router_1 = require("./routes/user.router");
-const users_controller_1 = require("./controllers/users.controller");
 const ably_service_1 = require("./services/ably.service");
 const msges_router_1 = require("./routes/msges.router");
+//end
+//for reading env files.
 dotenv_1.default.config();
 exports.app = (0, express_1.default)();
-const port = process.env.PORT || 9000;
+const port = process.env.PORT || 9000; //env.PORT for getting port number allocted by backend
 exports.app.use(express_1.default.json());
-exports.app.use((0, cors_1.default)());
-exports.app.use((0, morgan_1.default)("tiny"));
+exports.app.use((0, cors_1.default)()); // to avoid cors errors
+exports.app.use((0, morgan_1.default)("tiny")); //to log every request to rest api
 (0, ably_service_1.ably_endpoints)(); //to register alby endpoints .
-exports.app.get("/test", auth_middleware_1.verifyUser, (req, res) => {
-    res.send("hee");
+exports.app.get("/test", auth_middleware_1.verifyUser, (_, res) => {
+    res.send("applicion works");
 });
-exports.app.get("/delete", users_controller_1.handleDelteAllUsers);
-exports.app.use("/user", user_router_1.userRouter);
-exports.app.use("/msges", msges_router_1.msgRouter);
+exports.app.use("/user", user_router_1.userRouter); //users router
+exports.app.use("/msges", msges_router_1.msgRouter); //msges router
+// l
 function start() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -49,4 +51,4 @@ function start() {
         });
     });
 }
-start();
+start(); //main function

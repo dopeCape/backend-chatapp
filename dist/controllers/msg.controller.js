@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.handleDeleteMsg = exports.handleGetAllMsg = exports.handleNewMsg = void 0;
+exports.handleEditMsg = exports.handleDeleteMsg = exports.handleGetAllMsg = exports.handleNewMsg = void 0;
 const date_and_time_1 = __importDefault(require("date-and-time"));
 const msges_module_1 = require("../modules/msges.module");
 const uuid_1 = require("uuid");
@@ -26,7 +26,7 @@ function handleNewMsg(data, channel, from_channel) {
             msg: msg,
             from: from,
             to: to,
-            data: date_,
+            date: date_,
         };
         try {
             let msg = yield (0, msges_module_1.addMsg)(msge, chatId);
@@ -74,3 +74,16 @@ function handleDeleteMsg(data, channel) {
     });
 }
 exports.handleDeleteMsg = handleDeleteMsg;
+function handleEditMsg(data, channel) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let { msgId, chatId } = data;
+        try {
+            let msg = yield (0, msges_module_1.deleteMsg)(chatId, msgId);
+            channel.publish("edit-msg", msg);
+        }
+        catch (error) {
+            console.log(error);
+        }
+    });
+}
+exports.handleEditMsg = handleEditMsg;

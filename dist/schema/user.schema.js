@@ -18,6 +18,11 @@ const userSchema = new mongoose_1.Schema({
     profilePic: {
         type: String,
     },
+    groupChats: [
+        {
+            groupId: String,
+        },
+    ],
     friends: [
         {
             userId: String,
@@ -25,6 +30,15 @@ const userSchema = new mongoose_1.Schema({
             profilePic: String,
             chatId: String,
             blocked: String,
+            pending: String,
+        },
+    ],
+    requests: [
+        {
+            userId: String,
+            userName: String,
+            profilePic: String,
+            chatId: String,
             pending: String,
         },
     ],

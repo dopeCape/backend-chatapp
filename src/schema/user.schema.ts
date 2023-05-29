@@ -16,6 +16,11 @@ const userSchema = new Schema({
   profilePic: {
     type: String,
   },
+  groupChats: [
+    {
+      groupId: String,
+    },
+  ],
 
   friends: [
     {
@@ -24,6 +29,16 @@ const userSchema = new Schema({
       profilePic: String,
       chatId: String,
       blocked: String,
+      pending: String,
+    },
+  ],
+  requests: [
+    {
+      userId: String,
+      userName: String,
+      profilePic: String,
+
+      chatId: String,
       pending: String,
     },
   ],

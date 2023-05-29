@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.handleUnBlockUser = exports.handleBlockUser = exports.handleRejectRequest = exports.handleRemoveFriend = exports.handleDelteAllUsers = exports.handleAcceptRequest = exports.handleSendRequest = exports.handleSearchUser = exports.handleGauth = exports.handleChelckUserName = exports.handleSetUserData = exports.handleGetUserData = void 0;
+exports.handleUserNotTyping = exports.handleUserTyping = exports.handleUnBlockUser = exports.handleBlockUser = exports.handleRejectRequest = exports.handleRemoveFriend = exports.handleDelteAllUsers = exports.handleAcceptRequest = exports.handleSendRequest = exports.handleSearchUser = exports.handleGauth = exports.handleChelckUserName = exports.handleSetUserData = exports.handleGetUserData = void 0;
 const ably_confij_1 = require("../config/ably.confij");
 const msges_module_1 = require("../modules/msges.module");
 const user_module_1 = require("../modules/user.module");
@@ -212,3 +212,23 @@ function handleRemoveFriend(data, channel) {
     });
 }
 exports.handleRemoveFriend = handleRemoveFriend;
+function handleUserTyping(data, channel) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let [from, to, chatId] = data;
+        try {
+            channel.publish("user-typing", { from, chatId });
+        }
+        catch (error) { }
+    });
+}
+exports.handleUserTyping = handleUserTyping;
+function handleUserNotTyping(data, channel) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let [from, to, chatId] = data;
+        try {
+            channel.publish("user-typing", { from, chatId });
+        }
+        catch (error) { }
+    });
+}
+exports.handleUserNotTyping = handleUserNotTyping;

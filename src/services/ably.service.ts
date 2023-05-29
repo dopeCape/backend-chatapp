@@ -7,8 +7,14 @@ import {
   handleRemoveFriend,
   handleSendRequest,
   handleUnBlockUser,
+  handleUserNotTyping,
+  handleUserTyping,
 } from "../controllers/users.controller";
-import { handleDeleteMsg, handleNewMsg } from "../controllers/msg.controller";
+import {
+  handleDeleteMsg,
+  handleEditMsg,
+  handleNewMsg,
+} from "../controllers/msg.controller";
 
 dotenv.config(); //to read env files
 
@@ -85,6 +91,20 @@ async function ably_endpoints() {
     let channel = ably_client.channels.get(data.data.to);
 
     handleDeleteMsg(data.data, channel);
+  });
+  server_channel.subscribe("edit-msg", (data) => {
+    let channel = ably_client.channels.get(data.data.to);
+
+    handleEditMsg(data.data, channel);
+  });
+
+  server_channel.subscribe("user-typing", (data) => {
+    let channel = ably_client.channels.get(data.data.to);
+    handleUserTyping(data, channel);
+  });
+  server_channel.subscribe("user-nottyping", (data) => {
+    let channel = ably_client.channels.get(data.data.to);
+    handleUserNotTyping(data, channel);
   });
 }
 

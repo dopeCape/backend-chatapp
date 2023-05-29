@@ -1,0 +1,94 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  directUrl         = env("DIRECT_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+  // If you want to use Prisma Migrate, you will need to manually create a shadow database
+  // https://neon.tech/docs/guides/prisma-migrate#configure-a-shadow-database-for-prisma-migrate
+  // make sure to append ?connect_timeout=10 to the connection string
+}
+
+//user model
+//org model
+//workspace model
+//indChat model
+//groupChatmoel
+
+model Org {
+  id        String      @id @default(cuid())
+  owner     User        @relation("ownedOrgs", fields: [ownerId], references: [id])
+  ownerId   String      @unique
+  workspace Workspace[]
+}
+
+model User {
+  id             String        @unique() @default(cuid())
+  email          String        @unique()
+  name           String
+  profilePic     String
+  chatWorkSpaces chatWorkSpace @relation(fields: [chatWorkSpaceId], references: [id])
+  fireBaseid     String        @unique()
+  ownedOrg       Org?          @relation("ownedOrgs")
+
+  chatWorkSpaceId String     @unique
+  groupChat       groupChat?
+  Chat            Chat?
+}
+
+model Chat {
+  id   String @unique @default(cuid())
+  from User   @relation(fields: [userId], references: [id])
+
+  msg       String
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime  @updatedAt
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  chatWorkSpace   chatWorkSpace? @relation(fields: [chatWorkSpaceId], references: [id])
+  chatWorkSpaceId String?
+  workspaceId     String         @unique
+  userId          String         @unique
+}
+
+model groupChat {
+  id        String    @unique @default(cuid())
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  from      User      @relation(fields: [userId], references: [id])
+
+  msg             String
+  chatWorkSpace   chatWorkSpace? @relation(fields: [chatWorkSpaceId], references: [id])
+  chatWorkSpaceId String?
+  workspaceId     String         @unique
+  createdAt       DateTime       @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  userId String @unique
+}
+
+model Workspace {
+  id              String         @unique @default(cuid())
+  orgId           String
+  Org             Org            @relation(fields: [orgId], references: [id])
+  groupChat       groupChat?
+  Chat            Chat?
+  chatWorkSpace   chatWorkSpace? @relation(fields: [chatWorkSpaceId], references: [id])
+  chatWorkSpaceId String?
+  groupChatId     String         @unique
+}
+
+model chatWorkSpace {
+  id         String      @unique @default(cuid())
+  chats      Chat[]      @relation()
+  workspaces Workspace[]
+  groupChats groupChat[]
+  User       User?
+}

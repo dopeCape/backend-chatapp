@@ -12,11 +12,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getMsgCollection = exports.getUserCollection = exports.getDB = exports.connectDB = void 0;
+exports.getGroupChatCollection = exports.getMsgCollection = exports.getUserCollection = exports.getDB = exports.connectDB = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const user_schema_1 = require("../schema/user.schema");
 const msg_schema_1 = require("../schema/msg.schema");
+const groupchat_schema_1 = require("../schema/groupchat.schema");
 dotenv_1.default.config();
 const MONGO_URI = process.env.URI;
 let DB;
@@ -59,3 +60,15 @@ function getMsgCollection() {
     });
 }
 exports.getMsgCollection = getMsgCollection;
+function getGroupChatCollection() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            let msgCol = mongoose_1.default.model("groupChat", groupchat_schema_1.groupChatSchema);
+            return msgCol;
+        }
+        catch (error) {
+            console.error(error);
+        }
+    });
+}
+exports.getGroupChatCollection = getGroupChatCollection;

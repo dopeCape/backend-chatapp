@@ -1,5 +1,4 @@
-import { getMsgCollection } from "../config/db.config";
-import date, { addMilliseconds } from "date-and-time";
+import date from "date-and-time";
 import { addMsg, deleteMsg, getAllMsges } from "../modules/msges.module";
 import { v4 } from "uuid";
 async function handleNewMsg(data, channel, from_channel) {
@@ -12,7 +11,7 @@ async function handleNewMsg(data, channel, from_channel) {
     msg: msg,
     from: from,
     to: to,
-    data: date_,
+    date: date_,
   };
 
   try {
@@ -55,5 +54,14 @@ async function handleDeleteMsg(data, channel) {
     console.log(error);
   }
 }
+async function handleEditMsg(data, channel) {
+  let { msgId, chatId } = data;
+  try {
+    let msg = await deleteMsg(chatId, msgId);
+    channel.publish("edit-msg", msg);
+  } catch (error) {
+    console.log(error);
+  }
+}
 
-export { handleNewMsg, handleGetAllMsg, handleDeleteMsg };
+export { handleNewMsg, handleGetAllMsg, handleDeleteMsg, handleEditMsg };

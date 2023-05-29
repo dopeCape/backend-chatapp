@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import { userSchema } from "../schema/user.schema";
 import { msgSchema } from "../schema/msg.schema";
+import { groupChatSchema } from "../schema/groupchat.schema";
 
 dotenv.config();
 const MONGO_URI = process.env.URI;
@@ -35,5 +36,19 @@ async function getMsgCollection() {
     console.error(error);
   }
 }
+async function getGroupChatCollection() {
+  try {
+    let msgCol = mongoose.model("groupChat", groupChatSchema);
+    return msgCol;
+  } catch (error) {
+    console.error(error);
+  }
+}
 
-export { connectDB, getDB, getUserCollection, getMsgCollection };
+export {
+  connectDB,
+  getDB,
+  getUserCollection,
+  getMsgCollection,
+  getGroupChatCollection,
+};
