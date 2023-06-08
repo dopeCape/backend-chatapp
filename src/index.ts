@@ -22,6 +22,8 @@ export const app: Application = Express();
 const port: Number | String = process.env.PORT || 9000; //env.PORT for getting port number allocted by backend
 
 app.use(Express.json());
+
+// app.get("/del", deleteAll);
 app.use(cors()); // to avoid cors errors
 app.use(morgan("tiny")); //to log every request to rest api
 
