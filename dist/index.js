@@ -18,11 +18,14 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const morgan_1 = __importDefault(require("morgan"));
-const db_config_1 = require("./config/db.config");
 const auth_middleware_1 = require("./middleware/auth.middleware");
 const user_router_1 = require("./routes/user.router");
 const ably_service_1 = require("./services/ably.service");
 const msges_router_1 = require("./routes/msges.router");
+const db_config_1 = require("./config/db.config");
+const workspace_router_1 = require("./routes/workspace.router");
+const workspace_module_1 = require("./modules/workspace.module");
+const groupchat_router_1 = require("./routes/groupchat.router");
 //end
 //for reading env files.
 dotenv_1.default.config();
@@ -35,13 +38,17 @@ exports.app.use((0, morgan_1.default)("tiny")); //to log every request to rest a
 exports.app.get("/test", auth_middleware_1.verifyUser, (_, res) => {
     res.send("applicion works");
 });
+exports.app.get("/del", workspace_module_1.deleteAll);
+let prisma;
 exports.app.use("/user", user_router_1.userRouter); //users router
 exports.app.use("/msges", msges_router_1.msgRouter); //msges router
-// l
+exports.app.use("/workspace", workspace_router_1.workSpaceRouter); //workspace routee
+exports.app.use("/gchat", groupchat_router_1.groupChatRouter); //groupchat router
 function start() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            yield (0, db_config_1.connectDB)();
+            yield (0, db_config_1.connectDb)();
+            prisma = (0, db_config_1.getDb)();
         }
         catch (error) {
             console.error(error);
@@ -51,4 +58,4 @@ function start() {
         });
     });
 }
-start(); //main function
+start().then(() => __awaiter(void 0, void 0, void 0, function* () { return yield prisma.$disconnect(); })); //main function

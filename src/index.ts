@@ -3,11 +3,15 @@ import Express, { Application, Request, Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import morgan from "morgan";
-import { connectDB } from "./config/db.config";
+
 import { verifyUser } from "./middleware/auth.middleware";
 import { userRouter } from "./routes/user.router";
 import { ably_endpoints } from "./services/ably.service";
 import { msgRouter } from "./routes/msges.router";
+import { connectDb, getDb } from "./config/db.config";
+import { workSpaceRouter } from "./routes/workspace.router";
+import { deleteAll } from "./modules/workspace.module";
+import { groupChatRouter } from "./routes/groupchat.router";
 //end
 
 //for reading env files.
@@ -25,13 +29,17 @@ ably_endpoints(); //to register alby endpoints .
 app.get("/test", verifyUser, (_: Request, res: Response): void => {
   res.send("applicion works");
 });
+app.get("/del", deleteAll);
 
+let prisma;
 app.use("/user", userRouter); //users router
 app.use("/msges", msgRouter); //msges router
-// l
+app.use("/workspace", workSpaceRouter); //workspace routee
+app.use("/gchat", groupChatRouter); //groupchat router
 async function start() {
   try {
-    await connectDB();
+    await connectDb();
+    prisma = getDb();
   } catch (error) {
     console.error(error);
   }
@@ -40,4 +48,4 @@ async function start() {
   });
 }
 
-start(); //main function
+start().then(async () => await prisma.$disconnect()); //main function

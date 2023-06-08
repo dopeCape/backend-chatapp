@@ -8,23 +8,26 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.connectDb = exports.getDb = void 0;
-const dotenv_1 = __importDefault(require("dotenv"));
-const client_1 = require("@prisma/client");
-dotenv_1.default.config();
-const MONGO_URI = process.env.URI;
-let DB;
-function connectDb() {
+exports.handleCreateWorkSpace = void 0;
+const workspace_module_1 = require("../modules/workspace.module");
+function handleCreateWorkSpace(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
-        DB = new client_1.PrismaClient();
+        try {
+            let workspace = {
+                name: req.body.name,
+            };
+            let userId = req.body.userid;
+            let chatWorkSpaceId = req.body.id;
+            let { workspace_, groupChat, chatWorkSpace_ } = yield (0, workspace_module_1.createWrokspace)(workspace, chatWorkSpaceId, userId);
+            res.status(201).send({ workspace_, groupChat, chatWorkSpace_ });
+        }
+        catch (error) {
+            if (error.code == "P2002") {
+                res.send({ workspace_: "P2002" });
+            }
+            // next(error);
+        }
     });
 }
-exports.connectDb = connectDb;
-function getDb() {
-    return DB;
-}
-exports.getDb = getDb;
+exports.handleCreateWorkSpace = handleCreateWorkSpace;

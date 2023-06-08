@@ -8,65 +8,44 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.handleEditMsg = exports.handleDeleteMsg = exports.handleGetAllMsg = exports.handleNewMsg = void 0;
-const date_and_time_1 = __importDefault(require("date-and-time"));
+exports.handleNewMsgGroup = exports.handleDeleteMsgGroup = exports.handleEditMsgGroup = exports.handleEditMsg = exports.handleDeleteMsg = exports.handleNewMsg = void 0;
 const msges_module_1 = require("../modules/msges.module");
-const uuid_1 = require("uuid");
-function handleNewMsg(data, channel, from_channel) {
+const ably_service_1 = require("../services/ably.service");
+function handleNewMsg(data, channel) {
     return __awaiter(this, void 0, void 0, function* () {
-        let { msg, from, to, chatId } = data;
-        let now = new Date();
-        let date_ = date_and_time_1.default.format(now, "YYYY/MM/DD HH:mm:ss");
-        let msge = {
-            msgId: (0, uuid_1.v4)(),
-            msg: msg,
-            from: from,
-            to: to,
-            date: date_,
-        };
         try {
-            let msg = yield (0, msges_module_1.addMsg)(msge, chatId);
-            console.log(msg);
-            channel.publish("new-msg", msg);
-            from_channel.publish("new-msg", msg);
+            let { content, type, from, chatId, url } = data;
+            console.log(content, type, from, chatId, url);
+            let msg = yield (0, msges_module_1.addMsg)(chatId, type, content, from, url, false);
+            let { from_channel, to_channel } = channel;
+            from_channel.publish("new-msg", {
+                data: msg,
+            });
+            to_channel.publish("new-msg", {
+                data: msg,
+            });
         }
         catch (error) {
-            throw error;
+            console.log(error);
         }
     });
 }
 exports.handleNewMsg = handleNewMsg;
-function handleGetAllMsg(req, res, next) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let { id } = req.params;
-        let chatId = id;
-        try {
-            let msges = yield (0, msges_module_1.getAllMsges)(chatId);
-            if (msges == null) {
-                res.json({ msges: { msges: [] } });
-                res.status(201);
-            }
-            else {
-                res.json({ msges });
-                res.status(201);
-            }
-        }
-        catch (error) {
-            throw error;
-        }
-    });
-}
-exports.handleGetAllMsg = handleGetAllMsg;
 function handleDeleteMsg(data, channel) {
     return __awaiter(this, void 0, void 0, function* () {
-        let { msgId, chatId } = data;
         try {
-            let msg = yield (0, msges_module_1.deleteMsg)(chatId, msgId);
-            channel.publish("delete-msg", msg);
+            let { msgId: msgid, chatId } = data;
+            let _ = yield (0, msges_module_1.deleteMsg)(msgid);
+            let { from_channel, to_channel } = channel;
+            from_channel.publish("delete-msg", {
+                msgid,
+                chatId,
+            });
+            to_channel.publish("delete-msg", {
+                msgid,
+                chatId,
+            });
         }
         catch (error) {
             console.log(error);
@@ -76,10 +55,20 @@ function handleDeleteMsg(data, channel) {
 exports.handleDeleteMsg = handleDeleteMsg;
 function handleEditMsg(data, channel) {
     return __awaiter(this, void 0, void 0, function* () {
-        let { msgId, chatId } = data;
         try {
-            let msg = yield (0, msges_module_1.deleteMsg)(chatId, msgId);
-            channel.publish("edit-msg", msg);
+            let { msgId, content, chatId } = data;
+            yield (0, msges_module_1.editMsg)(content, msgId);
+            let { from_channel, to_channel } = channel;
+            from_channel.publish("edit-msg", {
+                msgId,
+                chatId,
+                content,
+            });
+            to_channel.publish("edit-msg", {
+                msgId,
+                chatId,
+                content,
+            });
         }
         catch (error) {
             console.log(error);
@@ -87,3 +76,52 @@ function handleEditMsg(data, channel) {
     });
 }
 exports.handleEditMsg = handleEditMsg;
+function handleEditMsgGroup(data, channel) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            let { msgId, content, chatId } = data;
+            yield (0, msges_module_1.editMsg)(content, msgId);
+            let { to } = channel;
+            to.forEach((x) => {
+                console.log(x);
+                (0, ably_service_1.editMsgGgroup)(x.user.id, content, chatId, msgId);
+            });
+        }
+        catch (error) {
+            throw error;
+        }
+    });
+}
+exports.handleEditMsgGroup = handleEditMsgGroup;
+function handleDeleteMsgGroup(data, channel) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            let { msgId: msgid, chatId } = data;
+            let _ = yield (0, msges_module_1.deleteMsg)(msgid);
+            let { to } = channel;
+            to.forEach((x) => {
+                (0, ably_service_1.deleteMsgGgroup)(x.user.id, msgid, chatId);
+            });
+        }
+        catch (error) {
+            console.log(error);
+        }
+    });
+}
+exports.handleDeleteMsgGroup = handleDeleteMsgGroup;
+function handleNewMsgGroup(data, channel) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            let { content, type, from, chatId, url } = data;
+            let msg = yield (0, msges_module_1.addMsg)(chatId, type, content, from, url, true);
+            let { to } = channel;
+            to.forEach((x) => {
+                (0, ably_service_1.newMsgGroup)(x.user.id, msg, chatId);
+            });
+        }
+        catch (error) {
+            console.log(error);
+        }
+    });
+}
+exports.handleNewMsgGroup = handleNewMsgGroup;

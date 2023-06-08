@@ -9,63 +9,168 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getGroupChatData = exports.createGroupChat = exports.addMemberToGroup = exports.removeMemeberFromGroup = void 0;
+exports.removeUser = exports.createNewGruop = exports.addMemebToGroup = void 0;
 const db_config_1 = require("../config/db.config");
-function getGroupChatData(groupId) {
+function addMemebToGroup(users, workspaceId, groupId, name) {
     return __awaiter(this, void 0, void 0, function* () {
-        try {
-            let collection = yield (0, db_config_1.getGroupChatCollection)();
-            let groupChat = yield collection.findOne({ groupId: groupId });
-            return groupChat;
+        const connectUsers = users.map((user) => ({
+            id: user.id,
+        }));
+        let msg = `${name} added `;
+        if (users.length > 1) {
+            msg = msg + ` ${users[0].user.name}`;
         }
-        catch (error) {
-            throw error;
-        }
-    });
-}
-exports.getGroupChatData = getGroupChatData;
-function createGroupChat(groupChat) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            let collection = yield (0, db_config_1.getGroupChatCollection)();
-            let newGroupChat = yield collection.create(groupChat);
-            return newGroupChat;
-        }
-        catch (error) {
-            throw error;
-        }
-    });
-}
-exports.createGroupChat = createGroupChat;
-function addMemberToGroup(groupId, user) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            let collection = yield (0, db_config_1.getGroupChatCollection)();
-            let groupChat = yield collection.findOne({ groupId: groupId });
-            groupChat.Members.push(user);
-            let updatedGroup = yield collection.findOneAndUpdate({ groupId: groupId }, groupChat);
-            return updatedGroup;
-        }
-        catch (error) {
-            throw error;
-        }
-    });
-}
-exports.addMemberToGroup = addMemberToGroup;
-function removeMemeberFromGroup(groupId, userId) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            let collection = yield (0, db_config_1.getGroupChatCollection)();
-            let groupChat = yield collection.findOne({ groupId: groupId });
-            let newGroupChat = groupChat.Members.filter((x) => {
-                return x.userId != userId;
+        else {
+            users.forEach((x) => {
+                msg = msg + ` ${x.user.name} `;
             });
-            let updatedGroupChat_ = yield collection.findOneAndUpdate({ groupId: groupId }, newGroupChat);
-            return updatedGroupChat_;
+        }
+        try {
+            let prisma = (0, db_config_1.getDb)();
+            let group_ = yield prisma.groupChat.update({
+                where: {
+                    id: groupId,
+                },
+                data: {
+                    user: {
+                        connect: connectUsers,
+                    },
+                    msges: {
+                        create: {
+                            content: msg,
+                            type: "CMD",
+                        },
+                    },
+                },
+                include: {
+                    user: {
+                        include: {
+                            user: true,
+                        },
+                    },
+                    msges: {
+                        include: {
+                            replys: true,
+                            from: true,
+                        },
+                    },
+                },
+            });
+            return group_;
         }
         catch (error) {
             throw error;
         }
     });
 }
-exports.removeMemeberFromGroup = removeMemeberFromGroup;
+exports.addMemebToGroup = addMemebToGroup;
+function createNewGruop(workspaceId, users, user, name) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            let prisma = (0, db_config_1.getDb)();
+            let msg;
+            if (users.length > 1) {
+                msg = `${user.name} added :`;
+            }
+            else {
+                msg = `${user.name} joined ${name} `;
+            }
+            const connectUsers = users.map((user) => ({
+                id: user.id,
+            }));
+            users.forEach((x) => {
+                if (x.user.id != user.id) {
+                    msg = msg + ` ${x.user.name}`;
+                }
+            });
+            let group_ = yield prisma.groupChat.create({
+                data: {
+                    name: name,
+                    workspace: {
+                        connect: {
+                            id: workspaceId,
+                        },
+                    },
+                    user: {
+                        connect: connectUsers,
+                    },
+                    admin: {
+                        connect: {
+                            id: user.id,
+                        },
+                    },
+                    msges: {
+                        create: [
+                            {
+                                content: `${user.name} created ${name}`,
+                                type: "CMD",
+                            },
+                            {
+                                content: msg,
+                                type: "CMD",
+                            },
+                        ],
+                    },
+                },
+                include: {
+                    user: {
+                        include: {
+                            user: true,
+                        },
+                    },
+                    msges: {
+                        include: {
+                            replys: true,
+                            from: true,
+                        },
+                    },
+                },
+            });
+            return group_;
+        }
+        catch (error) {
+            throw error;
+        }
+    });
+}
+exports.createNewGruop = createNewGruop;
+function removeUser(msg, userId, chatId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            let prisma = (0, db_config_1.getDb)();
+            let gruop_ = yield prisma.groupChat.update({
+                where: {
+                    id: chatId,
+                },
+                data: {
+                    msges: {
+                        create: {
+                            type: "CMD",
+                            content: msg,
+                        },
+                    },
+                    user: {
+                        disconnect: {
+                            id: userId,
+                        },
+                    },
+                },
+                include: {
+                    msges: true,
+                    user: {
+                        include: {
+                            user: true,
+                        },
+                    },
+                },
+            });
+            let x = gruop_.msges.at(-1);
+            let users = gruop_.user;
+            return { x, users };
+        }
+        catch (error) {
+            console.log(error);
+        }
+    });
+}
+exports.removeUser = removeUser;

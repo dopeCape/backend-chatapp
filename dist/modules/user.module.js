@@ -9,28 +9,168 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.removeFriendRequest = exports.blockRequest = exports.unBlockRequest = exports.sendRequest = exports.acceptRequest = exports.rejectRequest = exports.searchUsers = exports.findUserName = exports.getUserData = exports.setPending = exports.blockFriend = exports.removeFriend = exports.createUser = exports.addFriend = exports.deleteAllUsers = void 0;
+exports.makeUserAFriend = exports.sendEmailInvite = exports.searchUser = exports.createInvite = exports.getInvite = exports.getUserData = exports.createUser = void 0;
+const client_1 = require("@prisma/client");
 const db_config_1 = require("../config/db.config");
-const helper_1 = require("../utils/helper");
-function getUserData(userId) {
+const uuid_1 = require("uuid");
+const workspace_module_1 = require("./workspace.module");
+function getInvite(email) {
     return __awaiter(this, void 0, void 0, function* () {
+        let prisma = (0, db_config_1.getDb)();
         try {
-            let collection = yield (0, db_config_1.getUserCollection)();
-            let user = yield collection.findOne({ userId: userId });
-            return user;
+            let request = yield prisma.invites.findFirst({
+                where: {
+                    email: email,
+                },
+                include: {
+                    workspace: true,
+                },
+            });
+            return request;
         }
         catch (error) {
             throw error;
         }
     });
 }
-exports.getUserData = getUserData;
-function createUser(user) {
+exports.getInvite = getInvite;
+function createInvite(email, role, workspaceId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let prisma = (0, db_config_1.getDb)();
+        let invite = yield getInvite(email);
+        let x = true;
+        try {
+            if (invite === null) {
+                prisma.invites.create({
+                    data: {
+                        email: email,
+                        role: role,
+                        workspace: {
+                            connect: workspaceId,
+                        },
+                    },
+                    include: {
+                        workspace: true,
+                    },
+                });
+                return "invite send";
+            }
+            else {
+                return "already invited ";
+            }
+        }
+        catch (error) {
+            throw error;
+        }
+    });
+}
+exports.createInvite = createInvite;
+function deleteRequest() {
+    return __awaiter(this, void 0, void 0, function* () { });
+}
+function createUser(user, workspaceId, groupChatId) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            let collection = yield (0, db_config_1.getUserCollection)();
-            let newUser = yield collection.create(user);
-            return newUser;
+            let prisma = (0, db_config_1.getDb)();
+            let uid = (0, uuid_1.v4)();
+            let created_user = yield prisma.user.create({
+                data: {
+                    name: user.name,
+                    fireBaseid: user.fireBaseid,
+                    email: user.email,
+                    admin: user.admin,
+                    profilePic: user.profilePic,
+                    chatWorkSpaces: {
+                        create: { role: user.role_ },
+                    },
+                },
+                include: {
+                    chatWorkSpaces: {
+                        include: {
+                            user: true,
+                            workspaces: true,
+                            Friend: {
+                                include: {
+                                    friend: {
+                                        include: {
+                                            user: true,
+                                        },
+                                    },
+                                    chat: {
+                                        include: {
+                                            msges: {
+                                                include: {
+                                                    replys: true,
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                            groupChats: {
+                                include: {
+                                    msges: {
+                                        include: {
+                                            replys: true,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+            let msg = null;
+            if (workspaceId != null) {
+                let { msg_, workspace_, groupChatId } = yield (0, workspace_module_1.addUserToWorkSpace)(created_user.chatWorkSpaceId, created_user.name, created_user.email, "email");
+                created_user = yield prisma.user.findFirst({
+                    where: {
+                        fireBaseid: user.fireBaseid,
+                    },
+                    include: {
+                        chatWorkSpaces: {
+                            include: {
+                                user: true,
+                                workspaces: true,
+                                Friend: {
+                                    include: {
+                                        friend: {
+                                            include: {
+                                                user: true,
+                                            },
+                                        },
+                                        chat: {
+                                            include: {
+                                                msges: {
+                                                    include: {
+                                                        replys: true,
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                                groupChats: {
+                                    include: {
+                                        msges: {
+                                            include: {
+                                                replys: true,
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                });
+                let user_ = yield prisma.chatWorkSpace.findFirst({
+                    where: { id: created_user.chatWorkSpaceId },
+                    include: { user: true },
+                });
+                return { created_user, workspace_, msg_, user_, groupChatId };
+            }
+            return { created_user };
+            // _=await newMemeberInWorkspce()
         }
         catch (error) {
             throw error;
@@ -38,308 +178,73 @@ function createUser(user) {
     });
 }
 exports.createUser = createUser;
-function findUserName(userName) {
+function sendEmailInvite(email, workspaceId, role) {
     return __awaiter(this, void 0, void 0, function* () {
+        let prisma = (0, db_config_1.getDb)();
         try {
-            let collection = yield (0, db_config_1.getUserCollection)();
-            let user = yield collection.findOne({ userName: userName });
-            console.log(user);
-            return user;
-        }
-        catch (error) {
-            throw error;
-        }
-    });
-}
-exports.findUserName = findUserName;
-function addFriend(userId, friend) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            let collection = yield (0, db_config_1.getUserCollection)();
-            let user = yield collection.findOne({ userId: userId });
-            user.friends.push(friend);
-            let updatedUser = yield collection.findOneAndUpdate({ userId: userId }, user);
-            return updatedUser;
-        }
-        catch (error) {
-            throw error;
-        }
-    });
-}
-exports.addFriend = addFriend;
-function removeFriend(userId, friendUserId) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            let collection = yield (0, db_config_1.getUserCollection)();
-            let user = yield collection.findOne({ userId: userId });
-            user.friends = user.friends.filter((x) => {
-                return x.userId === friendUserId;
+            let user = yield prisma.user.findFirst({
+                where: {
+                    email: email,
+                },
             });
-            let updatedUser = yield collection.findOneAndUpdate({ userId: userId }, user);
-            return updatedUser;
-        }
-        catch (error) {
-            throw error;
-        }
-    });
-}
-exports.removeFriend = removeFriend;
-function blockFriend(userId, friendUserId) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            let collection = yield (0, db_config_1.getUserCollection)();
-            let user = yield collection.findOne({ userId: userId });
-            user.friends.forEach((x, i) => {
-                if (x.userId === friendUserId) {
-                    if ((x.blocked = userId)) {
-                        x.blocked = "";
-                    }
-                    else {
-                        x.blocked = userId;
-                    }
-                }
-            });
-            let updatedUser = yield collection.findOneAndUpdate({ userId: userId }, user);
-            return updatedUser;
-        }
-        catch (error) {
-            throw error;
-        }
-    });
-}
-exports.blockFriend = blockFriend;
-function setPending(userId, pendingId) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            let collection = yield (0, db_config_1.getUserCollection)();
-            let user = yield collection.findOne({ userId: userId });
-            user.friends.forEach((x, i) => {
-                if (x.userId === userId) {
-                    if (x.pending != "") {
-                        if (pendingId == "rejected") {
-                            x.blocked = "rejected";
-                        }
-                        x.blocked = "accepted";
-                    }
-                    else {
-                        x.pending = pendingId;
-                    }
-                }
-            });
-            let updatedUser = yield collection.findOneAndUpdate({ userId: userId }, user);
-            return updatedUser;
-        }
-        catch (error) {
-            throw error;
-        }
-    });
-}
-exports.setPending = setPending;
-function searchUsers(query) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            let collection = yield (0, db_config_1.getUserCollection)();
-            const searchResults = yield collection
-                .find({
-                $or: [{ userName: { $regex: query, $options: "i" } }],
-            })
-                .select("userName email userId profilePic");
-            return searchResults;
-        }
-        catch (error) {
-            throw error;
-        }
-    });
-}
-exports.searchUsers = searchUsers;
-function acceptRequest(from, to, chatId) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            let collection = yield (0, db_config_1.getUserCollection)();
-            let msg_collection = yield (0, db_config_1.getMsgCollection)();
-            let from_user = yield collection.findOne({ userId: from });
-            let to_user = yield collection.findOne({ userId: to });
-            let msg = yield msg_collection.findOne({ chatId: chatId });
-            if (msg === null) {
-                msg_collection.create({ chatId: chatId, msges: [] });
-            }
-            let from_index;
-            from_user.requests.forEach((x, i) => {
-                if (x.userId == to) {
-                    let user;
-                    from_index = i;
-                    user = x;
-                    user.chatId = chatId;
-                    user.pending = "accepted";
-                    from_user.friends.push(user);
-                    console.log(user);
-                }
-            });
-            from_user.requests = from_user.requests.filter((x) => {
-                return x.userId != to;
-            });
-            from_user.friends = (0, helper_1.array_move)(from_user.friends, from_index, 0);
-            let to_index;
-            to_user.requests.forEach((x, i) => {
-                if (x.userId == from) {
-                    let user;
-                    user = x;
-                    user.pending = "accepted";
-                    user.chatId = chatId;
-                    to_index = i;
-                    to_user.friends.push(user);
-                }
-            });
-            to_user.requests = to_user.requests.filter((x) => {
-                return x.userId != from;
-            });
-            to_user.friends = (0, helper_1.array_move)(to_user.friends, to_index, 0);
-            let user_from_send = yield collection.findOneAndUpdate({ userId: from }, from_user);
-            let user_to_send = yield collection.findOneAndUpdate({ userId: to }, to_user);
-            return [from_user, chatId];
-        }
-        catch (error) {
-            throw error;
-        }
-    });
-}
-exports.acceptRequest = acceptRequest;
-function rejectRequest(from, to) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            let collection = yield (0, db_config_1.getUserCollection)();
-            let from_user = yield collection.findOne({ userId: from });
-            let to_user = yield collection.findOne({ userId: to });
-            let from_index;
-            from_user.friends.forEach((x, i) => {
-                if (x.userId == to) {
-                    from_index = i;
-                    x.pending = "rejected";
-                }
-            });
-            from_user.friends = (0, helper_1.array_move)(from_user.friends, from_index, 0);
-            let to_index;
-            to_user.requests = to_user.requests.filter((x, i) => {
-                return x.userId != from_user.userId;
-            });
-            to_user.friends = (0, helper_1.array_move)(to_user.friends, to_index, 0);
-            let user_from_send = yield collection.findOneAndUpdate({ userId: from }, from_user);
-            let user_to_send = yield collection.findOneAndUpdate({ userId: to }, to_user);
-            return from_user;
-        }
-        catch (error) {
-            throw error;
-        }
-    });
-}
-exports.rejectRequest = rejectRequest;
-function blockRequest(from, to) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            let collection = yield (0, db_config_1.getUserCollection)();
-            let from_user = yield collection.findOne({ userId: from });
-            let to_user = yield collection.findOne({ userId: to });
-            from_user.friends.forEach((x) => {
-                if (x.userId == to) {
-                    x.blocked = from;
-                }
-            });
-            to_user.friends.forEach((x) => {
-                if (x.userId == from) {
-                    x.blocked = from;
-                }
-            });
-            let user_from_send = yield collection.findOneAndUpdate({ userId: from }, from_user);
-            let user_to_send = yield collection.findOneAndUpdate({ userId: to }, to_user);
-            return to_user;
-        }
-        catch (error) {
-            throw error;
-        }
-    });
-}
-exports.blockRequest = blockRequest;
-function unBlockRequest(from, to) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            let collection = yield (0, db_config_1.getUserCollection)();
-            let from_user = yield collection.findOne({ userId: from });
-            let to_user = yield collection.findOne({ userId: to });
-            from_user.friends.forEach((x) => {
-                if (x.userId == to) {
-                    x.blocked = "unblocked";
-                }
-            });
-            to_user.friends.forEach((x) => {
-                if (x.userId == from) {
-                    x.blocked = "unblocked";
-                }
-            });
-            let user_from_send = yield collection.findOneAndUpdate({ userId: from }, from_user);
-            let user_to_send = yield collection.findOneAndUpdate({ userId: to }, to_user);
-            return to_user;
-        }
-        catch (error) {
-            throw error;
-        }
-    });
-}
-exports.unBlockRequest = unBlockRequest;
-function removeFriendRequest(from, to) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            let collection = yield (0, db_config_1.getUserCollection)();
-            let from_user = yield collection.findOne({ userId: from });
-            let to_user = yield collection.findOne({ userId: to });
-            from_user.friends = from_user.friends.filter((x) => {
-                return x.userId !== to;
-            });
-            to_user.friends = to_user.friends.filter((x) => {
-                return x.userId !== from;
-            });
-            let user_from_send = yield collection.findOneAndUpdate({ userId: from }, from_user);
-            let user_to_send = yield collection.findOneAndUpdate({ userId: to }, to_user);
-            return to_user;
-        }
-        catch (error) {
-            throw error;
-        }
-    });
-}
-exports.removeFriendRequest = removeFriendRequest;
-function sendRequest(from, to) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            let collection = yield (0, db_config_1.getUserCollection)();
-            let from_user = yield collection.findOne({ userId: from });
-            let to_user = yield collection.findOne({ userId: to });
-            let from_user_ = {
-                userId: from_user.userId,
-                userName: from_user.userName,
-                profilePic: from_user.profilePic,
-                pending: from,
-            };
-            let to_user_ = {
-                userId: to_user.userId,
-                userName: to_user.userName,
-                profilePic: to_user.profilePic,
-                pending: from,
-            };
-            let y = true;
-            from_user.friends.forEach((x) => {
-                if (x.userId === to) {
-                    y = false;
-                }
-            });
-            if (y) {
-                from_user.requests.unshift(to_user_);
-                to_user.requests.unshift(from_user_);
-                let user_from_send = yield collection.findOneAndUpdate({ userId: from }, from_user);
-                let user_to_send = yield collection.findOneAndUpdate({ userId: to }, to_user);
-                return [from_user, to_user];
+            if (role == "member") {
+                role = client_1.Role.MEMBER;
             }
             else {
-                return ["request already sent", "request already sent"];
+                role = client_1.Role.EXTERNAL;
+            }
+            if (user == null) {
+                let invite = yield prisma.invites.findFirst({
+                    where: {
+                        email: email,
+                    },
+                    include: {
+                        workspace: true,
+                    },
+                });
+                if (invite == null) {
+                    let inveite_ = yield prisma.invites.create({
+                        data: {
+                            email: email,
+                            workspace: {
+                                connect: {
+                                    id: workspaceId,
+                                },
+                            },
+                            role: role,
+                        },
+                    });
+                    return "invite send";
+                }
+                else {
+                    let x = true;
+                    invite.workspace.forEach((y) => {
+                        if (y.id === workspaceId) {
+                            x = false;
+                        }
+                    });
+                    if (x) {
+                        let invite_ = yield prisma.invites.update({
+                            where: {
+                                email: email,
+                            },
+                            data: {
+                                workspace: {
+                                    connect: {
+                                        id: workspaceId,
+                                    },
+                                },
+                            },
+                        });
+                        return "invite send";
+                    }
+                    else {
+                        return "already invited to the workspace";
+                    }
+                }
+            }
+            else {
+                return `user alreay exists:${user.name}`;
             }
         }
         catch (error) {
@@ -347,14 +252,215 @@ function sendRequest(from, to) {
         }
     });
 }
-exports.sendRequest = sendRequest;
-function deleteAllUsers() {
+exports.sendEmailInvite = sendEmailInvite;
+function searchUser(name) {
     return __awaiter(this, void 0, void 0, function* () {
+        let prisma = (0, db_config_1.getDb)();
         try {
-            let colleciton = yield (0, db_config_1.getUserCollection)();
-            colleciton.deleteMany({});
+            let users = yield prisma.user.findMany({
+                where: {
+                    name: {
+                        contains: name,
+                        mode: "insensitive", // Case-insensitive search
+                    },
+                },
+                include: {
+                    chatWorkSpaces: true,
+                },
+            });
+            console.log(users);
+            return users;
         }
-        catch (error) { }
+        catch (error) {
+            throw error;
+        }
     });
 }
-exports.deleteAllUsers = deleteAllUsers;
+exports.searchUser = searchUser;
+function getUserData(fireBaseid) {
+    return __awaiter(this, void 0, void 0, function* () {
+        console.log(fireBaseid);
+        try {
+            let prisma = (0, db_config_1.getDb)();
+            let user_ = yield prisma.user.findUnique({
+                where: {
+                    fireBaseid: fireBaseid,
+                },
+                include: {
+                    chatWorkSpaces: {
+                        include: {
+                            user: true,
+                            workspaces: {
+                                include: {
+                                    chatWorkSpace: {
+                                        include: {
+                                            user: true,
+                                        },
+                                    },
+                                },
+                            },
+                            Friend: {
+                                include: {
+                                    friend: {
+                                        include: {
+                                            user: true,
+                                        },
+                                    },
+                                    chat: {
+                                        include: {
+                                            msges: {
+                                                include: {
+                                                    from: true,
+                                                    replys: true,
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                            groupChats: {
+                                include: {
+                                    msges: {
+                                        include: {
+                                            from: true,
+                                            replys: true,
+                                        },
+                                    },
+                                    user: {
+                                        include: {
+                                            user: true,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+            return user_;
+        }
+        catch (error) {
+            throw error;
+        }
+    });
+}
+exports.getUserData = getUserData;
+function makeUserAFriend(user1, user2, workspace, content, type, url) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let prisma = (0, db_config_1.getDb)();
+        if (url == undefined) {
+            url = "";
+        }
+        try {
+            console.log("wtf");
+            let user1_ = yield prisma.chatWorkSpace.update({
+                where: {
+                    id: user1.id,
+                },
+                data: {
+                    Friend: {
+                        create: {
+                            chat: {
+                                create: {
+                                    workspace: {
+                                        connect: {
+                                            id: workspace,
+                                        },
+                                    },
+                                    msges: {
+                                        create: [
+                                            {
+                                                type: "CMD",
+                                                content: "Start of the converstion",
+                                            },
+                                            {
+                                                content: content,
+                                                type: type,
+                                                url: url,
+                                                from: {
+                                                    connect: {
+                                                        id: user1.user.id,
+                                                    },
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                            },
+                            friend: {
+                                connect: {
+                                    id: user2.id,
+                                },
+                            },
+                        },
+                    },
+                },
+                include: {
+                    user: true,
+                    workspaces: true,
+                    Friend: {
+                        include: {
+                            friend: {
+                                include: {
+                                    user: true,
+                                },
+                            },
+                            chat: {
+                                include: {
+                                    msges: {
+                                        include: {
+                                            from: true,
+                                            replys: true,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+            let user2_ = yield prisma.chatWorkSpace.update({
+                where: {
+                    id: user2.id,
+                },
+                data: {
+                    Friend: {
+                        create: {
+                            chat: { connect: { id: user1_.Friend.at(-1).chatId } },
+                            friend: { connect: { id: user1_.id } },
+                        },
+                    },
+                },
+                include: {
+                    Friend: {
+                        include: {
+                            friend: {
+                                include: {
+                                    user: true,
+                                },
+                            },
+                            chat: {
+                                include: {
+                                    workspace: true,
+                                    msges: {
+                                        include: {
+                                            from: true,
+                                            replys: true,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+            let toSendUser1 = user1_.Friend.at(-1);
+            let toSendUser2 = user2_.Friend.at(-1);
+            return { toSendUser1, toSendUser2 };
+        }
+        catch (error) {
+            console.log(error);
+        }
+    });
+}
+exports.makeUserAFriend = makeUserAFriend;

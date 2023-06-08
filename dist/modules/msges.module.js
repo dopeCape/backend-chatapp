@@ -8,50 +8,78 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllMsges = exports.editMsg = exports.deleteMsg = exports.addMsg = void 0;
+exports.editMsg = exports.deleteMsg = exports.addMsg = void 0;
 const db_config_1 = require("../config/db.config");
-const date_and_time_1 = __importDefault(require("date-and-time"));
-function addMsg(msg, chatId) {
+function addMsg(chatId, type, content, from, url, group) {
     return __awaiter(this, void 0, void 0, function* () {
+        if (url == undefined) {
+            url = "";
+        }
         try {
-            let collection = yield (0, db_config_1.getMsgCollection)();
-            let msges;
-            msges = yield collection.findOne({ chatId: chatId });
-            if (msges == null) {
-                msges = yield collection.create({ chatId: chatId });
-                msges.msges = [msg];
+            let prisma = (0, db_config_1.getDb)();
+            if (!group) {
+                let _ = yield prisma.msges.create({
+                    data: {
+                        type: type,
+                        Chat: {
+                            connect: { id: chatId },
+                        },
+                        content: content,
+                        url: url,
+                        from: {
+                            connect: {
+                                id: from,
+                            },
+                        },
+                    },
+                    include: {
+                        replys: true,
+                        from: true,
+                    },
+                });
+                let msg = _;
+                return { msg };
             }
             else {
-                if (msges.msges) {
-                    msges.msges.push(msg);
-                }
-                else {
-                    msges.msges = [msg];
-                }
+                let _ = yield prisma.msges.create({
+                    data: {
+                        type: type,
+                        groupchat: {
+                            connect: { id: chatId },
+                        },
+                        content: content,
+                        url: url,
+                        from: {
+                            connect: {
+                                id: from,
+                            },
+                        },
+                    },
+                    include: {
+                        replys: true,
+                        from: true,
+                    },
+                });
+                let msg = _;
+                return { msg };
             }
-            yield collection.updateOne({ chatId: chatId }, msges);
-            return msges;
         }
         catch (error) {
-            throw error;
+            console.log(error);
         }
     });
 }
 exports.addMsg = addMsg;
-function deleteMsg(chatId, msgId) {
+function deleteMsg(msgid) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            let collection = yield (0, db_config_1.getMsgCollection)();
-            let msges = yield collection.findOne({ chatId: chatId });
-            msges.msges = msges.msges.filter((x) => {
-                return x.msgId != msgId;
+            let prisma = (0, db_config_1.getDb)();
+            let deletedmsg = yield prisma.msges.delete({
+                where: {
+                    id: msgid,
+                },
             });
-            yield collection.updateOne({ chatId: chatId }, msges);
-            return msges;
         }
         catch (error) {
             throw error;
@@ -59,51 +87,22 @@ function deleteMsg(chatId, msgId) {
     });
 }
 exports.deleteMsg = deleteMsg;
-function editMsg(chatId, msgId, msg) {
+function editMsg(content, msgId) {
     return __awaiter(this, void 0, void 0, function* () {
+        let prisma = (0, db_config_1.getDb)();
         try {
-            let collection = yield (0, db_config_1.getMsgCollection)();
-            let msges = yield collection.findOne({ chatId: chatId });
-            let now = new Date();
-            let date_ = date_and_time_1.default.format(now, "YYYY/MM/DD HH:mm:ss");
-            msges.msges.forEach((x) => {
-                if (x.msgId == msgId) {
-                    x.msg = msg;
-                    x.edited = true;
-                    x.date = date_;
-                }
+            let editedMsg = yield prisma.msges.update({
+                where: {
+                    id: msgId,
+                },
+                data: {
+                    content: content,
+                },
             });
-            yield collection.updateOne({ chatId: chatId }, msges);
-            return msges;
         }
         catch (error) {
-            throw error;
+            console.log(error, "hiii");
         }
     });
 }
 exports.editMsg = editMsg;
-function getAllMsges(chatId) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            let collection = yield (0, db_config_1.getMsgCollection)();
-            let msges = yield collection.findOne({ chatId: chatId });
-            return msges;
-        }
-        catch (error) {
-            throw error;
-        }
-    });
-}
-exports.getAllMsges = getAllMsges;
-function deleteAllMsg(chatId) {
-    return __awaiter(this, void 0, void 0, function* () {
-        //to drop db after tests
-        try {
-            let collection = yield (0, db_config_1.getMsgCollection)();
-            let msges = yield collection.findOneAndDelete({ chatId: chatId });
-        }
-        catch (error) {
-            throw error;
-        }
-    });
-}

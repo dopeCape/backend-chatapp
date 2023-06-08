@@ -1,213 +1,365 @@
+import { Role } from "@prisma/client";
+import { User } from "@prisma/client";
 import { ablyTokenCreater } from "../config/ably.confij";
-import { getAllMsges } from "../modules/msges.module";
-import {
-  acceptRequest,
-  blockRequest,
-  createUser,
-  deleteAllUsers,
-  findUserName,
-  getUserData,
-  rejectRequest,
-  removeFriendRequest,
-  searchUsers,
-  sendRequest,
-  unBlockRequest,
-} from "../modules/user.module";
 
-// async function getAllChat(user_data) {
-//   return new Promise(function(resolve) {
-//
-//     console.log(msg);
-//     resolve(msg);
-//   });
-// }
-async function handleGetUserData(req, res, next) {
-  let userId = req.params.userId;
+async function handleAddToWorkSpace(req, res, next) {
+  let { chatWorkSpaceId, name, email, user_, workSpaceId } = req.body;
+
   try {
-    let msges;
-    let user_data = await getUserData(userId);
-    let ably_token = await ablyTokenCreater(userId);
-    let msg = [];
-    await Promise.all(
-      user_data.friends.map(async (x) => {
-        let msg_ = await getAllMsges(x.chatId);
+    let { msg_, workspace_, groupChatId, groupChat_, user_ } =
+      await addUserToWorkSpace(
+        chatWorkSpaceId,
+        name,
+        email,
+        "null",
+        workSpaceId
+      );
+    console.log(workspace_.chatWorkSpace);
 
-        if (msg_ !== null) {
-          msg.push(msg_);
-        }
-      })
+    await newMemeberInWorkspce(
+      "iEthxenlKU",
+      msg_,
+      user_,
+      groupChatId,
+      workSpaceId
     );
 
-    res.json({ user_data, ably_token, msg });
-    res.status(201);
+    workspace_.chatWorkSpace.map((x) => {
+      if (x.user.id != user_.user.id) {
+        newMemeberInWorkspce(x.user.id, msg_, user_, groupChatId, workSpaceId);
+      } else {
+        newMemeberAdder(user_.user.id, workspace_, groupChat_);
+      }
+    });
+
+    res.send({
+      msg: "added",
+    });
   } catch (error) {
     next(error);
   }
 }
-async function handleGauth(req, res, next) {
-  let { userId, userName, profilePic, email } = req.body;
 
+async function handleEmailInvtes(req, res, next) {
+  let email = req.body.email;
+  let workspaceId = req.body.workspaceId;
+  let role = req.body.role;
   try {
-    let user = await getUserData(userId);
+    let invite = await sendEmailInvite(email, workspaceId, role);
+    res.send({ invite });
+  } catch (error) {
+    next(error);
+  }
+}
 
-    if (user != null) {
-      res.json({ user_data: user });
-      res.status(201);
+async function handleChelckInvite(req: Request, res: Response, next) {
+  let email = req.body.email;
+  try {
+    if (email == "tmank14319@gmail.com" || email === "timeo@mym.com") {
+      res.send({ msg: "ok" });
     } else {
-      try {
-        let user_ = { userId, userName, profilePic, email };
-        let user = await createUser(user_);
-        res.json({ user_data: user });
-        res.status(201);
-      } catch (error) {
-        next(error);
+      let invite = await getInvite(email);
+      if (invite == null) {
+        res.send({ msg: "nope" });
+      } else {
+        res.send({ msg: "ok" });
       }
     }
   } catch (error) {
     next(error);
   }
 }
-async function handleSearchUser(req, res, next) {
-  let { q: query } = req.params;
 
+async function handleFindUsers(req, res, next) {
+  let name = req.body.name;
+  let workspaceId = req.body.workspaceId;
   try {
-    let users_ = await searchUsers(query);
-
-    res.status(200);
-    res.json({
-      users: users_,
-    });
+    let users = await searchUser(name);
+    res.send({ users });
   } catch (error) {
     next(error);
   }
 }
-async function handleChelckUserName(req, res, next) {
-  let userName = req.body.userName;
 
+async function handleGetUserData(req, res, next) {
+  let fireBaseid = req.params.userId;
   try {
-    let user = await findUserName(userName);
-    res.json({ userName: user?.userName });
+    let msges;
+    let user_data = await getUserData(fireBaseid);
+    let ably_token = await ablyTokenCreater(fireBaseid);
+
+    res.json({ user_data, ably_token });
     res.status(201);
   } catch (error) {
     next(error);
   }
 }
 
-async function handleSetUserData(req, res, next) {
-  let { userId, userName, profilePic, email } = req.body;
-  let user = {
-    userId,
-    userName,
-    profilePic,
-    email,
-  };
-  try {
-    let new_user = await createUser(user);
-    res.json({ user_data: new_user });
-    res.status(201);
-  } catch (error) {
-    next(error);
-  }
-}
+async function handleGauth(req: Request, res: Response, next) {
+  let { fireBaseid, name, profilePic, email } = req.body;
 
-async function handleSendRequest(data, channel) {
-  let [from, to] = data;
   try {
-    let [_, user] = await sendRequest(from, to);
-    if (user == "request already sent") {
+    let user = await getUserData(fireBaseid);
+
+    if (user != null) {
+      res.json({ user_data: user });
+      res.status(201);
     } else {
-      channel.publish("send-request", user);
+      let admin;
+      if (email === "tmank14319@gmail.com") {
+        admin = true;
+      } else {
+        admin = false;
+      }
+      let role = await getInvite(email);
+      let role_: Role;
+      if (role != null || email == "tmank14319@gmail.com") {
+        if (email == "tmank14319@gmail.com") {
+          role_ = Role.MEMBER;
+        } else {
+          if (role.role == Role.MEMBER) {
+            role_ = Role.MEMBER;
+          } else {
+            role_ = Role.EXTERNAL;
+          }
+        }
+        try {
+          let user_ = { fireBaseid, name, profilePic, email, admin, role_ };
+          let user_data = await createUser(user_);
+
+          let ably_token = await ablyTokenCreater(fireBaseid);
+
+          res.json({ user_data, ably_token });
+          res.status(201);
+        } catch (error) {
+          next(error);
+        }
+      } else {
+        res.send({ user_data: "not invited" });
+      }
     }
   } catch (error) {
-    throw error;
+    next(error);
   }
 }
 
-async function handleDelteAllUsers(req, res) {
-  try {
-    await deleteAllUsers();
-    res.send("delted all users");
-  } catch (error) {}
-}
+import {
+  createUser,
+  getInvite,
+  getUserData,
+  makeUserAFriend,
+  searchUser,
+  sendEmailInvite,
+} from "../modules/user.module";
+import { Request, Response } from "express";
+import { addUserToWorkSpace } from "../modules/workspace.module";
+import {
+  newMemeberAdder,
+  newMemeberInWorkspce,
+} from "../services/ably.service";
 
-async function handleAcceptRequest(data, channel) {
-  let [from, to, chatId] = data;
+//
+async function handleSetUserData(req, res, next) {
+  let { fireBaseid, name, profilePic, email, workspaceId, groupChatId } =
+    req.body;
+  let admin: boolean;
+  console.log(email);
+
+  if (email == "tmank14319@gmail.com" || email == "timeo@mym.com") {
+    admin = true;
+  } else {
+    admin = false;
+  }
+  let role = await getInvite(email);
+  let role_: Role;
+  if (
+    role != null ||
+    email == "tmank14319@gmail.com" ||
+    email == "timeo@mym.com"
+  ) {
+    if (email == "tmank14319@gmail.com" || email == "timeo@mym.com") {
+      role_ = Role.MEMBER;
+    } else {
+      if (role.role == Role.MEMBER) {
+        role_ = Role.MEMBER;
+      } else {
+        role_ = Role.EXTERNAL;
+      }
+    }
+    try {
+      let user_ = { fireBaseid, name, profilePic, email, admin, role_ };
+      let user_data;
+      if (email === "tmank14319@gmail.com" || email == "timeo@mym.com") {
+        user_data = await createUser(user_, null, null);
+      } else {
+        let {
+          created_user: user_data,
+          workspace_,
+          msg_,
+          user_: user__,
+          groupChatId,
+        } = await createUser(user_, "x", "x");
+        await Promise.all(
+          workspace_.chatWorkSpace.map(async (x) => {
+            if (x.user.id != user__.user.id) {
+              console.log(x.user.id, user__.user.id);
+              await newMemeberInWorkspce(
+                x.user.id,
+                msg_,
+                user__,
+                groupChatId,
+                user_data.chatWorkSpaces.workspaces[0].id
+              );
+            }
+          })
+        );
+      }
+
+      let ably_token = await ablyTokenCreater(fireBaseid);
+
+      res.json({ user_data, ably_token });
+      res.status(201);
+    } catch (error) {
+      next(error);
+    }
+  } else {
+    res.send({ user_data: "not invited" });
+  }
+}
+async function handleNewChat(data, channel) {
   try {
-    let [from_user] = await acceptRequest(from, to, chatId);
-    channel.publish("accept-request", { from_user, chatId });
+    let user1 = data.user1;
+    let user2 = data.user2;
+    let workspace = data.workspace;
+    let content = data.content;
+    let type = data.type;
+
+    let url = data.url;
+    let { toSendUser1: user1_, toSendUser2: user2_ } = await makeUserAFriend(
+      user1,
+      user2,
+      workspace,
+      content,
+      type,
+      url
+    );
+    let { user1Channel, user2Channel } = channel;
+    user1Channel.publish("new-chat", { data: user1_ });
+
+    user2Channel.publish("new-chat", { data: user2_ });
   } catch (error) {
-    throw error;
+    console.log(error);
   }
 }
-async function handleRejectRequest(data, channel) {
-  let [from, to] = data;
-  try {
-    let from_user = await rejectRequest(from, to);
-
-    channel.publish("reject-request", { from_user, to });
-  } catch (error) {
-    throw error;
-  }
-}
-
-async function handleBlockUser(data, channel) {
-  let [from, to] = data;
-  try {
-    let to_user = await blockRequest(from, to);
-    channel.publish("block-request", { to_user, from });
-  } catch (error) {
-    throw error;
-  }
-}
-async function handleUnBlockUser(data, channel) {
-  let [from, to] = data;
-  try {
-    let to_user = await unBlockRequest(from, to);
-
-    channel.publish("unblock-request", { to_user, from });
-  } catch (error) {
-    throw error;
-  }
-}
-async function handleRemoveFriend(data, channel) {
-  let [from, to] = data;
-  try {
-    let to_user = await removeFriendRequest(from, to);
-
-    channel.publish("unblock-request", to_user);
-  } catch (error) {
-    throw error;
-  }
-}
-
-async function handleUserTyping(data, channel) {
-  let [from, to, chatId] = data;
-
-  try {
-    channel.publish("user-typing", { from, chatId });
-  } catch (error) {}
-}
-async function handleUserNotTyping(data, channel) {
-  let [from, to, chatId] = data;
-
-  try {
-    channel.publish("user-typing", { from, chatId });
-  } catch (error) {}
-}
-
+//
+// async function handleSendRequest(data, channel) {
+//   let [from, to] = data;
+//   try {
+//     let [_, user] = await sendRequest(from, to);
+//     if (user == "request already sent") {
+//     } else {
+//       channel.publish("send-request", user);
+//     }
+//   } catch (error) {
+//     throw error;
+//   }
+// }
+//
+// async function handleDelteAllUsers(req, res) {
+//   try {
+//     await deleteAllUsers();
+//     res.send("delted all users");
+//   } catch (error) {}
+// }
+//
+// async function handleAcceptRequest(data, channel) {
+//   let [from, to, chatId] = data;
+//   try {
+//     let [from_user] = await acceptRequest(from, to, chatId);
+//     channel.publish("accept-request", { from_user, chatId });
+//   } catch (error) {
+//     throw error;
+//   }
+// }
+// async function handleRejectRequest(data, channel) {
+//   let [from, to] = data;
+//   try {
+//     let from_user = await rejectRequest(from, to);
+//
+//     channel.publish("reject-request", { from_user, to });
+//   } catch (error) {
+//     throw error;
+//   }
+// }
+//
+// async function handleBlockUser(data, channel) {
+//   let [from, to] = data;
+//   try {
+//     let to_user = await blockRequest(from, to);
+//     channel.publish("block-request", { to_user, from });
+//   } catch (error) {
+//     throw error;
+//   }
+// }
+// async function handleUnBlockUser(data, channel) {
+//   let [from, to] = data;
+//   try {
+//     let to_user = await unBlockRequest(from, to);
+//
+//     channel.publish("unblock-request", { to_user, from });
+//   } catch (error) {
+//     throw error;
+//   }
+// }
+// async function handleRemoveFriend(data, channel) {
+//   let [from, to] = data;
+//   try {
+//     let to_user = await removeFriendRequest(from, to);
+//
+//     channel.publish("unblock-request", to_user);
+//   } catch (error) {
+//     throw error;
+//   }
+// }
+//
+// async function handleUserTyping(data, channel) {
+//   let [from, to, chatId] = data;
+//
+//   try {
+//     channel.publish("user-typing", { from, chatId });
+//   } catch (error) {}
+// }
+// async function handleUserNotTyping(data, channel) {
+//   let [from, to, chatId] = data;
+//
+//   try {
+//     channel.publish("user-typing", { from, chatId });
+//   } catch (error) {}
+// }
+//
+// export {
+//   handleGetUserData,
+//   handleSetUserData,
+//   handleChelckUserName,
+//   handleGauth,
+//   handleSearchUser,
+//   handleSendRequest,
+//   handleAcceptRequest,
+//   handleDelteAllUsers,
+//   handleRemoveFriend,
+//   handleRejectRequest,
+//   handleBlockUser,
+//   handleUnBlockUser,
+//   handleUserTyping,
+//   handleUserNotTyping,
+// };
 export {
-  handleGetUserData,
   handleSetUserData,
-  handleChelckUserName,
   handleGauth,
-  handleSearchUser,
-  handleSendRequest,
-  handleAcceptRequest,
-  handleDelteAllUsers,
-  handleRemoveFriend,
-  handleRejectRequest,
-  handleBlockUser,
-  handleUnBlockUser,
-  handleUserTyping,
-  handleUserNotTyping,
+  handleGetUserData,
+  handleChelckInvite,
+  handleFindUsers,
+  handleEmailInvtes,
+  handleAddToWorkSpace,
+  handleNewChat,
 };

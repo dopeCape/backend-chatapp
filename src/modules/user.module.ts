@@ -1,398 +1,475 @@
-import { getMsgCollection, getUserCollection } from "../config/db.config";
-import { array_move } from "../utils/helper";
-
-async function getUserData(userId) {
+import { Role, User, Workspace, chatWorkSpace, type } from "@prisma/client";
+import { getDb } from "../config/db.config";
+import { v4 } from "uuid";
+import { addUserToWorkSpace } from "./workspace.module";
+import { newMemeberInWorkspce } from "../services/ably.service";
+async function getInvite(email) {
+  let prisma = getDb();
   try {
-    let collection = await getUserCollection();
-    let user = await collection.findOne({ userId: userId });
-    return user;
+    let request = await prisma.invites.findFirst({
+      where: {
+        email: email,
+      },
+      include: {
+        workspace: true,
+      },
+    });
+    return request;
   } catch (error) {
     throw error;
   }
 }
+async function createInvite(email: string, role: Role, workspaceId) {
+  let prisma = getDb();
+  let invite = await getInvite(email);
+  let x = true;
 
-async function createUser(user) {
   try {
-    let collection = await getUserCollection();
-    let newUser = await collection.create(user);
-    return newUser;
-  } catch (error) {
-    throw error;
-  }
-}
-
-async function findUserName(userName) {
-  try {
-    let collection = await getUserCollection();
-    let user = await collection.findOne({ userName: userName });
-    console.log(user);
-
-    return user;
-  } catch (error) {
-    throw error;
-  }
-}
-
-async function addFriend(userId, friend) {
-  try {
-    let collection = await getUserCollection();
-
-    let user = await collection.findOne({ userId: userId });
-    user.friends.push(friend);
-    let updatedUser = await collection.findOneAndUpdate(
-      { userId: userId },
-      user
-    );
-    return updatedUser;
-  } catch (error) {
-    throw error;
-  }
-}
-
-async function removeFriend(userId, friendUserId) {
-  try {
-    let collection = await getUserCollection();
-    let user = await collection.findOne({ userId: userId });
-    user.friends = user.friends.filter((x) => {
-      return x.userId === friendUserId;
-    });
-
-    let updatedUser = await collection.findOneAndUpdate(
-      { userId: userId },
-      user
-    );
-    return updatedUser;
-  } catch (error) {
-    throw error;
-  }
-}
-
-async function blockFriend(userId, friendUserId) {
-  try {
-    let collection = await getUserCollection();
-    let user = await collection.findOne({ userId: userId });
-    user.friends.forEach((x, i) => {
-      if (x.userId === friendUserId) {
-        if ((x.blocked = userId)) {
-          x.blocked = "";
-        } else {
-          x.blocked = userId;
-        }
-      }
-    });
-
-    let updatedUser = await collection.findOneAndUpdate(
-      { userId: userId },
-      user
-    );
-    return updatedUser;
-  } catch (error) {
-    throw error;
-  }
-}
-
-async function setPending(userId, pendingId) {
-  try {
-    let collection = await getUserCollection();
-    let user = await collection.findOne({ userId: userId });
-    user.friends.forEach((x, i) => {
-      if (x.userId === userId) {
-        if (x.pending != "") {
-          if (pendingId == "rejected") {
-            x.blocked = "rejected";
-          }
-          x.blocked = "accepted";
-        } else {
-          x.pending = pendingId;
-        }
-      }
-    });
-
-    let updatedUser = await collection.findOneAndUpdate(
-      { userId: userId },
-      user
-    );
-    return updatedUser;
-  } catch (error) {
-    throw error;
-  }
-}
-async function searchUsers(query) {
-  try {
-    let collection = await getUserCollection();
-    const searchResults = await collection
-      .find({
-        $or: [{ userName: { $regex: query, $options: "i" } }],
-      })
-      .select("userName email userId profilePic");
-
-    return searchResults;
-  } catch (error) {
-    throw error;
-  }
-}
-async function acceptRequest(from, to, chatId) {
-  try {
-    let collection = await getUserCollection();
-    let msg_collection = await getMsgCollection();
-    let from_user = await collection.findOne({ userId: from });
-    let to_user = await collection.findOne({ userId: to });
-
-    let msg = await msg_collection.findOne({ chatId: chatId });
-
-    if (msg === null) {
-      msg_collection.create({ chatId: chatId, msges: [] });
-    }
-
-    let from_index;
-    from_user.requests.forEach((x, i) => {
-      if (x.userId == to) {
-        let user;
-        from_index = i;
-        user = x;
-
-        user.chatId = chatId;
-        user.pending = "accepted";
-
-        from_user.friends.push(user);
-        console.log(user);
-      }
-    });
-    from_user.requests = from_user.requests.filter((x) => {
-      return x.userId != to;
-    });
-
-    from_user.friends = array_move(from_user.friends, from_index, 0);
-
-    let to_index;
-    to_user.requests.forEach((x, i) => {
-      if (x.userId == from) {
-        let user;
-
-        user = x;
-        user.pending = "accepted";
-        user.chatId = chatId;
-        to_index = i;
-
-        to_user.friends.push(user);
-      }
-    });
-    to_user.requests = to_user.requests.filter((x) => {
-      return x.userId != from;
-    });
-
-    to_user.friends = array_move(to_user.friends, to_index, 0);
-    let user_from_send = await collection.findOneAndUpdate(
-      { userId: from },
-      from_user
-    );
-
-    let user_to_send = await collection.findOneAndUpdate(
-      { userId: to },
-      to_user
-    );
-    return [from_user, chatId];
-  } catch (error) {
-    throw error;
-  }
-}
-async function rejectRequest(from, to) {
-  try {
-    let collection = await getUserCollection();
-    let from_user = await collection.findOne({ userId: from });
-    let to_user = await collection.findOne({ userId: to });
-
-    let from_index;
-    from_user.friends.forEach((x, i) => {
-      if (x.userId == to) {
-        from_index = i;
-        x.pending = "rejected";
-      }
-    });
-
-    from_user.friends = array_move(from_user.friends, from_index, 0);
-
-    let to_index;
-    to_user.requests = to_user.requests.filter((x, i) => {
-      return x.userId != from_user.userId;
-    });
-
-    to_user.friends = array_move(to_user.friends, to_index, 0);
-    let user_from_send = await collection.findOneAndUpdate(
-      { userId: from },
-      from_user
-    );
-
-    let user_to_send = await collection.findOneAndUpdate(
-      { userId: to },
-      to_user
-    );
-    return from_user;
-  } catch (error) {
-    throw error;
-  }
-}
-
-async function blockRequest(from, to) {
-  try {
-    let collection = await getUserCollection();
-    let from_user = await collection.findOne({ userId: from });
-    let to_user = await collection.findOne({ userId: to });
-
-    from_user.friends.forEach((x) => {
-      if (x.userId == to) {
-        x.blocked = from;
-      }
-    });
-
-    to_user.friends.forEach((x) => {
-      if (x.userId == from) {
-        x.blocked = from;
-      }
-    });
-    let user_from_send = await collection.findOneAndUpdate(
-      { userId: from },
-      from_user
-    );
-
-    let user_to_send = await collection.findOneAndUpdate(
-      { userId: to },
-      to_user
-    );
-    return to_user;
-  } catch (error) {
-    throw error;
-  }
-}
-async function unBlockRequest(from, to) {
-  try {
-    let collection = await getUserCollection();
-    let from_user = await collection.findOne({ userId: from });
-    let to_user = await collection.findOne({ userId: to });
-
-    from_user.friends.forEach((x) => {
-      if (x.userId == to) {
-        x.blocked = "unblocked";
-      }
-    });
-
-    to_user.friends.forEach((x) => {
-      if (x.userId == from) {
-        x.blocked = "unblocked";
-      }
-    });
-    let user_from_send = await collection.findOneAndUpdate(
-      { userId: from },
-      from_user
-    );
-
-    let user_to_send = await collection.findOneAndUpdate(
-      { userId: to },
-      to_user
-    );
-    return to_user;
-  } catch (error) {
-    throw error;
-  }
-}
-
-async function removeFriendRequest(from, to) {
-  try {
-    let collection = await getUserCollection();
-    let from_user = await collection.findOne({ userId: from });
-    let to_user = await collection.findOne({ userId: to });
-
-    from_user.friends = from_user.friends.filter((x) => {
-      return x.userId !== to;
-    });
-
-    to_user.friends = to_user.friends.filter((x) => {
-      return x.userId !== from;
-    });
-
-    let user_from_send = await collection.findOneAndUpdate(
-      { userId: from },
-      from_user
-    );
-
-    let user_to_send = await collection.findOneAndUpdate(
-      { userId: to },
-      to_user
-    );
-    return to_user;
-  } catch (error) {
-    throw error;
-  }
-}
-
-async function sendRequest(from, to) {
-  try {
-    let collection = await getUserCollection();
-    let from_user = await collection.findOne({ userId: from });
-    let to_user = await collection.findOne({ userId: to });
-
-    let from_user_ = {
-      userId: from_user.userId,
-      userName: from_user.userName,
-      profilePic: from_user.profilePic,
-      pending: from,
-    };
-
-    let to_user_ = {
-      userId: to_user.userId,
-      userName: to_user.userName,
-      profilePic: to_user.profilePic,
-      pending: from,
-    };
-    let y = true;
-    from_user.friends.forEach((x) => {
-      if (x.userId === to) {
-        y = false;
-      }
-    });
-
-    if (y) {
-      from_user.requests.unshift(to_user_);
-
-      to_user.requests.unshift(from_user_);
-      let user_from_send = await collection.findOneAndUpdate(
-        { userId: from },
-        from_user
-      );
-
-      let user_to_send = await collection.findOneAndUpdate(
-        { userId: to },
-        to_user
-      );
-      return [from_user, to_user];
+    if (invite === null) {
+      prisma.invites.create({
+        data: {
+          email: email,
+          role: role,
+          workspace: {
+            connect: workspaceId,
+          },
+        },
+        include: {
+          workspace: true,
+        },
+      });
+      return "invite send";
     } else {
-      return ["request already sent", "request already sent"];
+      return "already invited ";
+    }
+  } catch (error) {
+    throw error;
+  }
+}
+async function deleteRequest() { }
+async function createUser(user, workspaceId?, groupChatId?) {
+  try {
+    let prisma = getDb();
+    let uid = v4();
+
+    let created_user = await prisma.user.create({
+      data: {
+        name: user.name,
+        fireBaseid: user.fireBaseid,
+        email: user.email,
+        admin: user.admin,
+        profilePic: user.profilePic,
+        chatWorkSpaces: {
+          create: { role: user.role_ },
+        },
+      },
+      include: {
+        chatWorkSpaces: {
+          include: {
+            user: true,
+            workspaces: true,
+            Friend: {
+              include: {
+                friend: {
+                  include: {
+                    user: true,
+                  },
+                },
+                chat: {
+                  include: {
+                    msges: {
+                      include: {
+                        replys: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            groupChats: {
+              include: {
+                msges: {
+                  include: {
+                    replys: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    let msg = null;
+    if (workspaceId != null) {
+      let { msg_, workspace_, groupChatId } = await addUserToWorkSpace(
+        created_user.chatWorkSpaceId,
+        created_user.name,
+        created_user.email,
+        "email"
+      );
+      created_user = await prisma.user.findFirst({
+        where: {
+          fireBaseid: user.fireBaseid,
+        },
+        include: {
+          chatWorkSpaces: {
+            include: {
+              user: true,
+
+              workspaces: true,
+
+              Friend: {
+                include: {
+                  friend: {
+                    include: {
+                      user: true,
+                    },
+                  },
+                  chat: {
+                    include: {
+                      msges: {
+                        include: {
+                          replys: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              groupChats: {
+                include: {
+                  msges: {
+                    include: {
+                      replys: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      let user_ = await prisma.chatWorkSpace.findFirst({
+        where: { id: created_user.chatWorkSpaceId },
+        include: { user: true },
+      });
+
+      return { created_user, workspace_, msg_, user_, groupChatId };
+    }
+    return { created_user };
+
+    // _=await newMemeberInWorkspce()
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function sendEmailInvite(email, workspaceId, role) {
+  let prisma = getDb();
+  try {
+    let user = await prisma.user.findFirst({
+      where: {
+        email: email,
+      },
+    });
+
+    if (role == "member") {
+      role = Role.MEMBER;
+    } else {
+      role = Role.EXTERNAL;
+    }
+    if (user == null) {
+      let invite = await prisma.invites.findFirst({
+        where: {
+          email: email,
+        },
+        include: {
+          workspace: true,
+        },
+      });
+      if (invite == null) {
+        let inveite_ = await prisma.invites.create({
+          data: {
+            email: email,
+            workspace: {
+              connect: {
+                id: workspaceId,
+              },
+            },
+            role: role,
+          },
+        });
+        return "invite send";
+      } else {
+        let x = true;
+        invite.workspace.forEach((y) => {
+          if (y.id === workspaceId) {
+            x = false;
+          }
+        });
+
+        if (x) {
+          let invite_ = await prisma.invites.update({
+            where: {
+              email: email,
+            },
+            data: {
+              workspace: {
+                connect: {
+                  id: workspaceId,
+                },
+              },
+            },
+          });
+          return "invite send";
+        } else {
+          return "already invited to the workspace";
+        }
+      }
+    } else {
+      return `user alreay exists:${user.name}`;
     }
   } catch (error) {
     throw error;
   }
 }
 
-async function deleteAllUsers() {
+async function searchUser(name) {
+  let prisma = getDb();
   try {
-    let colleciton = await getUserCollection();
-    colleciton.deleteMany({});
-  } catch (error) { }
+    let users = await prisma.user.findMany({
+      where: {
+        name: {
+          contains: name,
+          mode: "insensitive", // Case-insensitive search
+        },
+      },
+      include: {
+        chatWorkSpaces: true,
+      },
+    });
+    console.log(users);
+
+    return users;
+  } catch (error) {
+    throw error;
+  }
 }
+
+async function getUserData(fireBaseid) {
+  console.log(fireBaseid);
+
+  try {
+    let prisma = getDb();
+
+    let user_ = await prisma.user.findUnique({
+      where: {
+        fireBaseid: fireBaseid,
+      },
+      include: {
+        chatWorkSpaces: {
+          include: {
+            user: true,
+            workspaces: {
+              include: {
+                chatWorkSpace: {
+                  include: {
+                    user: true,
+                  },
+                },
+              },
+            },
+            Friend: {
+              include: {
+                friend: {
+                  include: {
+                    user: true,
+                  },
+                },
+
+                chat: {
+                  include: {
+                    msges: {
+                      include: {
+                        from: true,
+                        replys: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+
+            groupChats: {
+              include: {
+                msges: {
+                  include: {
+                    from: true,
+                    replys: true,
+                  },
+                },
+                user: {
+                  include: {
+                    user: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    return user_;
+  } catch (error) {
+    throw error;
+  }
+}
+async function makeUserAFriend(
+  user1,
+  user2,
+  workspace: string,
+  content: string,
+  type: type,
+  url
+) {
+  let prisma = getDb();
+  if (url == undefined) {
+    url = "";
+  }
+  try {
+    console.log("wtf");
+
+    let user1_ = await prisma.chatWorkSpace.update({
+      where: {
+        id: user1.id,
+      },
+      data: {
+        Friend: {
+          create: {
+            chat: {
+              create: {
+                workspace: {
+                  connect: {
+                    id: workspace,
+                  },
+                },
+                msges: {
+                  create: [
+                    {
+                      type: "CMD",
+                      content: "Start of the converstion",
+                    },
+                    {
+                      content: content,
+                      type: type,
+
+                      url: url,
+                      from: {
+                        connect: {
+                          id: user1.user.id,
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+            friend: {
+              connect: {
+                id: user2.id,
+              },
+            },
+          },
+        },
+      },
+      include: {
+        user: true,
+        workspaces: true,
+        Friend: {
+          include: {
+            friend: {
+              include: {
+                user: true,
+              },
+            },
+            chat: {
+              include: {
+                msges: {
+                  include: {
+                    from: true,
+                    replys: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    let user2_ = await prisma.chatWorkSpace.update({
+      where: {
+        id: user2.id,
+      },
+      data: {
+        Friend: {
+          create: {
+            chat: { connect: { id: user1_.Friend.at(-1).chatId } },
+            friend: { connect: { id: user1_.id } },
+          },
+        },
+      },
+      include: {
+        Friend: {
+          include: {
+            friend: {
+              include: {
+                user: true,
+              },
+            },
+            chat: {
+              include: {
+                workspace: true,
+                msges: {
+                  include: {
+                    from: true,
+                    replys: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    let toSendUser1 = user1_.Friend.at(-1);
+
+    let toSendUser2 = user2_.Friend.at(-1);
+
+    return { toSendUser1, toSendUser2 };
+  } catch (error) {
+    console.log(error);
+  }
+}
+// msges: {
+//               create: {
+//                 content: content,
+//                 type: type,
+//                 from: {
+//                   connect: {
+//                     id: user1.id,
+//                   },
+//                 },
+//               },
+//             }
+//
 export {
-  deleteAllUsers,
-  addFriend,
   createUser,
-  removeFriend,
-  blockFriend,
-  setPending,
   getUserData,
-  findUserName,
-  searchUsers,
-  rejectRequest,
-  acceptRequest,
-  sendRequest,
-  unBlockRequest,
-  blockRequest,
-  removeFriendRequest,
+  getInvite,
+  createInvite,
+  searchUser,
+  sendEmailInvite,
+  makeUserAFriend,
 };

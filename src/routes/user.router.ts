@@ -1,19 +1,34 @@
 import { Router } from "express";
+// import {
+//   handleChelckUserName,
+//   handleGauth,
+//   handleGetUserData,
+//   handleSearchUser,
+//   handleSetUserData,
+// } from "../controllers/users.controller";
+import { verifyUser } from "../middleware/auth.middleware";
 import {
-  handleChelckUserName,
+  handleAddToWorkSpace,
+  handleChelckInvite,
+  handleEmailInvtes,
+  handleFindUsers,
   handleGauth,
   handleGetUserData,
-  handleSearchUser,
   handleSetUserData,
 } from "../controllers/users.controller";
-import { verifyUser } from "../middleware/auth.middleware";
 
 const userRouter = Router();
 
 userRouter.get("/:userId", verifyUser, handleGetUserData);
 userRouter.post("/", verifyUser, handleSetUserData);
-userRouter.post("/chelck", handleChelckUserName);
+// userRouter.post("/chelck", handleChelckUserName);
 userRouter.post("/gauth", verifyUser, handleGauth);
-userRouter.get("/search/:q", verifyUser, handleSearchUser);
+userRouter.post("/chelckinvite", handleChelckInvite);
+userRouter.post("/search", verifyUser, handleFindUsers);
+
+userRouter.post("/invite", verifyUser, handleAddToWorkSpace);
+
+userRouter.post("/email", verifyUser, handleEmailInvtes);
+// userRouter.get("/search/:q", verifyUser, handleSearchUser);
 
 export { userRouter };

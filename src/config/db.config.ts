@@ -3,52 +3,18 @@ import dotenv from "dotenv";
 import { userSchema } from "../schema/user.schema";
 import { msgSchema } from "../schema/msg.schema";
 import { groupChatSchema } from "../schema/groupchat.schema";
+import { PrismaClient } from "@prisma/client";
 
 dotenv.config();
 const MONGO_URI = process.env.URI;
 let DB;
 
-async function connectDB() {
-  try {
-    DB = await mongoose.connect(MONGO_URI);
-  } catch (error) {
-    console.error(error);
-  }
+async function connectDb() {
+  DB = new PrismaClient();
 }
 
-function getDB() {
+function getDb(): PrismaClient {
   return DB;
 }
 
-async function getUserCollection() {
-  try {
-    let userCol = mongoose.model("users", userSchema);
-    return userCol;
-  } catch (error) {
-    console.error(error);
-  }
-}
-async function getMsgCollection() {
-  try {
-    let msgCol = mongoose.model("msges", msgSchema);
-    return msgCol;
-  } catch (error) {
-    console.error(error);
-  }
-}
-async function getGroupChatCollection() {
-  try {
-    let msgCol = mongoose.model("groupChat", groupChatSchema);
-    return msgCol;
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-export {
-  connectDB,
-  getDB,
-  getUserCollection,
-  getMsgCollection,
-  getGroupChatCollection,
-};
+export { getDb, connectDb };

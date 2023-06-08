@@ -1,67 +1,112 @@
-import date from "date-and-time";
-import { addMsg, deleteMsg, getAllMsges } from "../modules/msges.module";
-import { v4 } from "uuid";
-async function handleNewMsg(data, channel, from_channel) {
-  let { msg, from, to, chatId } = data;
-  let now = new Date();
-  let date_ = date.format(now, "YYYY/MM/DD HH:mm:ss");
+import { addMsg, deleteMsg, editMsg } from "../modules/msges.module";
+import {
+  deleteMsgGgroup,
+  editMsgGgroup,
+  newMsgGroup,
+} from "../services/ably.service";
 
-  let msge = {
-    msgId: v4(),
-    msg: msg,
-    from: from,
-    to: to,
-    date: date_,
-  };
-
+async function handleNewMsg(data, channel) {
   try {
-    let msg = await addMsg(msge, chatId);
-    console.log(msg);
+    let { content, type, from, chatId, url } = data;
+    console.log(content, type, from, chatId, url);
 
-    channel.publish("new-msg", msg);
-    from_channel.publish("new-msg", msg);
+    let msg = await addMsg(chatId, type, content, from, url, false);
+    let { from_channel, to_channel } = channel;
+    from_channel.publish("new-msg", {
+      data: msg,
+    });
+    to_channel.publish("new-msg", {
+      data: msg,
+    });
   } catch (error) {
-    throw error;
-  }
-}
-
-async function handleGetAllMsg(req, res, next) {
-  let { id } = req.params;
-
-  let chatId = id;
-
-  try {
-    let msges = await getAllMsges(chatId);
-    if (msges == null) {
-      res.json({ msges: { msges: [] } });
-
-      res.status(201);
-    } else {
-      res.json({ msges });
-      res.status(201);
-    }
-  } catch (error) {
-    throw error;
+    console.log(error);
   }
 }
 
 async function handleDeleteMsg(data, channel) {
-  let { msgId, chatId } = data;
   try {
-    let msg = await deleteMsg(chatId, msgId);
-    channel.publish("delete-msg", msg);
+    let { msgId: msgid, chatId } = data;
+    let _ = await deleteMsg(msgid);
+
+    let { from_channel, to_channel } = channel;
+    from_channel.publish("delete-msg", {
+      msgid,
+      chatId,
+    });
+    to_channel.publish("delete-msg", {
+      msgid,
+      chatId,
+    });
   } catch (error) {
     console.log(error);
   }
 }
 async function handleEditMsg(data, channel) {
-  let { msgId, chatId } = data;
   try {
-    let msg = await deleteMsg(chatId, msgId);
-    channel.publish("edit-msg", msg);
+    let { msgId, content, chatId } = data;
+    await editMsg(content, msgId);
+
+    let { from_channel, to_channel } = channel;
+    from_channel.publish("edit-msg", {
+      msgId,
+      chatId,
+      content,
+    });
+    to_channel.publish("edit-msg", {
+      msgId,
+      chatId,
+      content,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+}
+async function handleEditMsgGroup(data, channel) {
+  try {
+    let { msgId, content, chatId } = data;
+    await editMsg(content, msgId);
+    let { to } = channel;
+    to.forEach((x) => {
+      console.log(x);
+
+      editMsgGgroup(x.user.id, content, chatId, msgId);
+    });
+  } catch (error) {
+    throw error;
+  }
+}
+async function handleDeleteMsgGroup(data, channel) {
+  try {
+    let { msgId: msgid, chatId } = data;
+    let _ = await deleteMsg(msgid);
+
+    let { to } = channel;
+    to.forEach((x) => {
+      deleteMsgGgroup(x.user.id, msgid, chatId);
+    });
+  } catch (error) {
+    console.log(error);
+  }
+}
+async function handleNewMsgGroup(data, channel) {
+  try {
+    let { content, type, from, chatId, url } = data;
+
+    let msg = await addMsg(chatId, type, content, from, url, true);
+    let { to } = channel;
+    to.forEach((x) => {
+      newMsgGroup(x.user.id, msg, chatId);
+    });
   } catch (error) {
     console.log(error);
   }
 }
 
-export { handleNewMsg, handleGetAllMsg, handleDeleteMsg, handleEditMsg };
+export {
+  handleNewMsg,
+  handleDeleteMsg,
+  handleEditMsg,
+  handleEditMsgGroup,
+  handleDeleteMsgGroup,
+  handleNewMsgGroup,
+};
