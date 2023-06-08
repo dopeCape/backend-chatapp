@@ -24,7 +24,7 @@ const ably_service_1 = require("./services/ably.service");
 const msges_router_1 = require("./routes/msges.router");
 const db_config_1 = require("./config/db.config");
 const workspace_router_1 = require("./routes/workspace.router");
-const workspace_module_1 = require("./modules/workspace.module");
+// import { deleteAll } from "./modules/workspace.modules";
 const groupchat_router_1 = require("./routes/groupchat.router");
 //end
 //for reading env files.
@@ -38,7 +38,7 @@ exports.app.use((0, morgan_1.default)("tiny")); //to log every request to rest a
 exports.app.get("/test", auth_middleware_1.verifyUser, (_, res) => {
     res.send("applicion works");
 });
-exports.app.get("/del", workspace_module_1.deleteAll);
+// app.get("/del", deleteAll);
 let prisma;
 exports.app.use("/user", user_router_1.userRouter); //users router
 exports.app.use("/msges", msges_router_1.msgRouter); //msges router

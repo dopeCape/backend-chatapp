@@ -10,7 +10,7 @@ import { ably_endpoints } from "./services/ably.service";
 import { msgRouter } from "./routes/msges.router";
 import { connectDb, getDb } from "./config/db.config";
 import { workSpaceRouter } from "./routes/workspace.router";
-import { deleteAll } from "./modules/workspace.module";
+// import { deleteAll } from "./modules/workspace.modules";
 import { groupChatRouter } from "./routes/groupchat.router";
 //end
 
@@ -29,7 +29,7 @@ ably_endpoints(); //to register alby endpoints .
 app.get("/test", verifyUser, (_: Request, res: Response): void => {
   res.send("applicion works");
 });
-app.get("/del", deleteAll);
+// app.get("/del", deleteAll);
 
 let prisma;
 app.use("/user", userRouter); //users router
