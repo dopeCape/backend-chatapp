@@ -55,7 +55,10 @@ async function handleEmailInvtes(req, res, next) {
 async function handleChelckInvite(req: Request, res: Response, next) {
   let email = req.body.email;
   try {
-    if (email == "tmank14319@gmail.com" || email === "timeo@mym.com") {
+    if (
+      email == "tmank14319@gmail.com" ||
+      email === "timeo@mattyoungmedia.com "
+    ) {
       res.send({ msg: "ok" });
     } else {
       let invite = await getInvite(email);
@@ -165,7 +168,7 @@ async function handleSetUserData(req, res, next) {
   let admin: boolean;
   console.log(email);
 
-  if (email == "tmank14319@gmail.com" || email == "timeo@mym.com") {
+  if (email == "tmank14319@gmail.com" || email == "timeo@mattyoungmedia.com ") {
     admin = true;
   } else {
     admin = false;
@@ -175,9 +178,12 @@ async function handleSetUserData(req, res, next) {
   if (
     role != null ||
     email == "tmank14319@gmail.com" ||
-    email == "timeo@mym.com"
+    email == "timeo@mattyoungmedia.com "
   ) {
-    if (email == "tmank14319@gmail.com" || email == "timeo@mym.com") {
+    if (
+      email == "tmank14319@gmail.com" ||
+      email == "timeo@mattyoungmedia.com "
+    ) {
       role_ = Role.MEMBER;
     } else {
       if (role.role == Role.MEMBER) {
@@ -189,7 +195,10 @@ async function handleSetUserData(req, res, next) {
     try {
       let user_ = { fireBaseid, name, profilePic, email, admin, role_ };
       let user_data;
-      if (email === "tmank14319@gmail.com" || email == "timeo@mym.com") {
+      if (
+        email === "tmank14319@gmail.com" ||
+        email == "timeo@mattyoungmedia.com "
+      ) {
         user_data = await createUser(user_, null, null);
       } else {
         let {

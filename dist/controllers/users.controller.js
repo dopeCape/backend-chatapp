@@ -56,7 +56,8 @@ function handleChelckInvite(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         let email = req.body.email;
         try {
-            if (email == "tmank14319@gmail.com" || email === "timeo@mym.com") {
+            if (email == "tmank14319@gmail.com" ||
+                email === "timeo@mattyoungmedia.com ") {
                 res.send({ msg: "ok" });
             }
             else {
@@ -167,7 +168,7 @@ function handleSetUserData(req, res, next) {
         let { fireBaseid, name, profilePic, email, workspaceId, groupChatId } = req.body;
         let admin;
         console.log(email);
-        if (email == "tmank14319@gmail.com" || email == "timeo@mym.com") {
+        if (email == "tmank14319@gmail.com" || email == "timeo@mattyoungmedia.com ") {
             admin = true;
         }
         else {
@@ -177,8 +178,9 @@ function handleSetUserData(req, res, next) {
         let role_;
         if (role != null ||
             email == "tmank14319@gmail.com" ||
-            email == "timeo@mym.com") {
-            if (email == "tmank14319@gmail.com" || email == "timeo@mym.com") {
+            email == "timeo@mattyoungmedia.com ") {
+            if (email == "tmank14319@gmail.com" ||
+                email == "timeo@mattyoungmedia.com ") {
                 role_ = client_1.Role.MEMBER;
             }
             else {
@@ -192,7 +194,8 @@ function handleSetUserData(req, res, next) {
             try {
                 let user_ = { fireBaseid, name, profilePic, email, admin, role_ };
                 let user_data;
-                if (email === "tmank14319@gmail.com" || email == "timeo@mym.com") {
+                if (email === "tmank14319@gmail.com" ||
+                    email == "timeo@mattyoungmedia.com ") {
                     user_data = yield (0, user_module_1.createUser)(user_, null, null);
                 }
                 else {
