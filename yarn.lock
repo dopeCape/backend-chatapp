@@ -881,6 +881,15 @@
     "@babel/helper-validator-identifier" "^7.19.1"
     to-fast-properties "^2.0.0"
 
+"@briandlee/smuggler@^0.2.2":
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/@briandlee/smuggler/-/smuggler-0.2.2.tgz#7d4ba6b2cc4673c944068ab0d1bb42772c907100"
+  integrity sha512-vguDOGcaGkW2Rsn3kETeBLNCX1UHl1CQS2XJ5BP9L94zB3Pph6MO67w2LlUPeqTCAhbaEOzAOcQZ9epRnzfbcw==
+  dependencies:
+    commander "^9.4.0"
+    debug "^4.3.4"
+    dotenv "^16.0.1"
+
 "@fastify/busboy@^1.2.1":
   version "1.2.1"
   resolved "https://registry.npmjs.org/@fastify/busboy/-/busboy-1.2.1.tgz"
@@ -1643,6 +1652,11 @@ combined-stream@^1.0.8:
   dependencies:
     delayed-stream "~1.0.0"
 
+commander@^9.4.0:
+  version "9.5.0"
+  resolved "https://registry.yarnpkg.com/commander/-/commander-9.5.0.tgz#bc08d1eb5cedf7ccb797a96199d41c7bc3e60d30"
+  integrity sha512-KRs7WVDKg86PWiuAqhDrAQnTXZKraVcCc6vFdL14qrZ/DcWwuRo7VoiYXalXO7S5GKpqYiVEwCbgFDfxNHKJBQ==
+
 component-emitter@^1.3.0:
   version "1.3.0"
   resolved "https://registry.npmjs.org/component-emitter/-/component-emitter-1.3.0.tgz"
@@ -1776,6 +1790,11 @@ dezalgo@^1.0.4:
   dependencies:
     asap "^2.0.0"
     wrappy "1"
+
+dotenv@^16.0.1:
+  version "16.1.4"
+  resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-16.1.4.tgz#67ac1a10cd9c25f5ba604e4e08bc77c0ebe0ca8c"
+  integrity sha512-m55RtE8AsPeJBpOIFKihEmqUcoVncQIwo7x9U8ZwLEZw9ZpXboz2c+rvog+jUaJvVrZ5kBOeYQBX5+8Aa/OZQw==
 
 dotenv@^16.0.3:
   version "16.0.3"

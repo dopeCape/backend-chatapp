@@ -141,6 +141,14 @@ function ably_endpoints() {
                 console.log(error);
             }
         }));
+        server_channel.subscribe("unread-chat", (data) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                yield (0, users_controller_1.handleRead)(data.data);
+            }
+            catch (error) {
+                console.log(error);
+            }
+        }));
         server_channel.subscribe("delete-msg", (data) => __awaiter(this, void 0, void 0, function* () {
             try {
                 let from_channel = ably_client.channels.get(data.data.from);

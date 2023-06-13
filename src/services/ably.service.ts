@@ -1,6 +1,10 @@
 import Ably from "ably";
 import dotenv from "dotenv";
-import { handleNewChat } from "../controllers/users.controller";
+import {
+  handleAddUnread,
+  handleNewChat,
+  handleRead,
+} from "../controllers/users.controller";
 import {
   handleDeleteMsg,
   handleDeleteMsgGroup,
@@ -111,7 +115,6 @@ async function ably_endpoints() {
       let user1Channel = ably_client.channels.get(data.data.user1.user.id);
 
       let user2Channel = ably_client.channels.get(data.data.user2.user.id);
-
       await handleNewChat(data.data, { user1Channel, user2Channel });
     } catch (error) {
       console.log(error);
@@ -131,6 +134,13 @@ async function ably_endpoints() {
       let from_channel = ably_client.channels.get(data.data.from);
       let to_channel = ably_client.channels.get(data.data.to);
       let _ = await handleNewMsg(data.data, { from_channel, to_channel });
+    } catch (error) {
+      console.log(error);
+    }
+  });
+  server_channel.subscribe("unread-chat", async (data) => {
+    try {
+      await handleRead(data.data);
     } catch (error) {
       console.log(error);
     }

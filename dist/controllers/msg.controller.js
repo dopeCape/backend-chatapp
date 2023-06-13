@@ -15,15 +15,15 @@ const ably_service_1 = require("../services/ably.service");
 function handleNewMsg(data, channel) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            let { content, type, from, chatId, url } = data;
-            console.log(content, type, from, chatId, url);
-            let msg = yield (0, msges_module_1.addMsg)(chatId, type, content, from, url, false);
+            let { content, type, from, chatId, url, friendId } = data;
+            console.log(data);
+            let msg = yield (0, msges_module_1.addMsg)(chatId, type, content, from, url, false, friendId);
             let { from_channel, to_channel } = channel;
             from_channel.publish("new-msg", {
-                data: msg,
+                data: { msg },
             });
             to_channel.publish("new-msg", {
-                data: msg,
+                data: { msg, friendId },
             });
         }
         catch (error) {
@@ -113,7 +113,7 @@ function handleNewMsgGroup(data, channel) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             let { content, type, from, chatId, url } = data;
-            let msg = yield (0, msges_module_1.addMsg)(chatId, type, content, from, url, true);
+            let msg = yield (0, msges_module_1.addMsg)(chatId, type, content, from, url, true, null);
             let { to } = channel;
             to.forEach((x) => {
                 (0, ably_service_1.newMsgGroup)(x.user.id, msg, chatId);

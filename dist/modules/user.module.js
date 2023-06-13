@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.makeUserAFriend = exports.sendEmailInvite = exports.searchUser = exports.createInvite = exports.getInvite = exports.getUserData = exports.createUser = void 0;
+exports.ZeroUnread = exports.incrementUnread = exports.makeUserAFriend = exports.sendEmailInvite = exports.searchUser = exports.createInvite = exports.getInvite = exports.getUserData = exports.createUser = void 0;
 const client_1 = require("@prisma/client");
 const db_config_1 = require("../config/db.config");
 const uuid_1 = require("uuid");
@@ -93,7 +93,26 @@ function createUser(user, workspaceId, groupChatId) {
                                 include: {
                                     friend: {
                                         include: {
-                                            user: true,
+                                            user: {
+                                                include: {
+                                                    chatWorkSpaces: {
+                                                        include: {
+                                                            Friend: {
+                                                                include: {
+                                                                    workspace: true,
+                                                                },
+                                                                where: {
+                                                                    friend: {
+                                                                        user: {
+                                                                            fireBaseid: user.fireBaseid,
+                                                                        },
+                                                                    },
+                                                                },
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            },
                                         },
                                     },
                                     chat: {
@@ -123,7 +142,7 @@ function createUser(user, workspaceId, groupChatId) {
             let msg = null;
             if (workspaceId != null) {
                 let { msg_, workspace_, groupChatId } = yield (0, workspace_module_1.addUserToWorkSpace)(created_user.chatWorkSpaceId, created_user.name, created_user.email, "email");
-                created_user = yield prisma.user.findFirst({
+                let created_user_ = yield prisma.user.findFirst({
                     where: {
                         fireBaseid: user.fireBaseid,
                     },
@@ -163,17 +182,24 @@ function createUser(user, workspaceId, groupChatId) {
                         },
                     },
                 });
+                console.log(created_user_);
                 let user_ = yield prisma.chatWorkSpace.findFirst({
-                    where: { id: created_user.chatWorkSpaceId },
+                    where: { id: created_user_.chatWorkSpaceId },
                     include: { user: true },
                 });
-                return { created_user, workspace_, msg_, user_, groupChatId };
+                return {
+                    created_user_,
+                    workspace_,
+                    msg_,
+                    user_,
+                    groupChatId,
+                };
             }
             return { created_user };
             // _=await newMemeberInWorkspce()
         }
         catch (error) {
-            throw error;
+            console.log(error);
         }
     });
 }
@@ -303,7 +329,26 @@ function getUserData(fireBaseid) {
                                 include: {
                                     friend: {
                                         include: {
-                                            user: true,
+                                            user: {
+                                                include: {
+                                                    chatWorkSpaces: {
+                                                        include: {
+                                                            Friend: {
+                                                                include: {
+                                                                    workspace: true,
+                                                                },
+                                                                where: {
+                                                                    friend: {
+                                                                        user: {
+                                                                            fireBaseid: fireBaseid,
+                                                                        },
+                                                                    },
+                                                                },
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            },
                                         },
                                     },
                                     chat: {
@@ -360,6 +405,11 @@ function makeUserAFriend(user1, user2, workspace, content, type, url) {
                 data: {
                     Friend: {
                         create: {
+                            workspace: {
+                                connect: {
+                                    id: workspace,
+                                },
+                            },
                             chat: {
                                 create: {
                                     workspace: {
@@ -395,14 +445,41 @@ function makeUserAFriend(user1, user2, workspace, content, type, url) {
                         },
                     },
                 },
+            });
+            let user1_msg = yield prisma.chatWorkSpace.findUnique({
+                where: {
+                    id: user1.id,
+                },
                 include: {
                     user: true,
-                    workspaces: true,
+                    workspaces: {
+                        include: {
+                            chatWorkSpace: {
+                                include: {
+                                    user: true,
+                                },
+                            },
+                        },
+                    },
                     Friend: {
                         include: {
                             friend: {
                                 include: {
-                                    user: true,
+                                    user: {
+                                        include: {
+                                            chatWorkSpaces: {
+                                                include: {
+                                                    Friend: {
+                                                        where: {
+                                                            friend: {
+                                                                id: user1.id,
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
                                 },
                             },
                             chat: {
@@ -426,22 +503,58 @@ function makeUserAFriend(user1, user2, workspace, content, type, url) {
                 data: {
                     Friend: {
                         create: {
-                            chat: { connect: { id: user1_.Friend.at(-1).chatId } },
+                            workspace: {
+                                connect: {
+                                    id: workspace,
+                                },
+                            },
+                            chat: { connect: { id: user1_msg.Friend.at(-1).chatId } },
                             friend: { connect: { id: user1_.id } },
                         },
                     },
                 },
+            });
+            let user2_msg = yield prisma.chatWorkSpace.findUnique({
+                where: {
+                    id: user2.id,
+                },
                 include: {
-                    Friend: {
+                    user: true,
+                    workspaces: {
                         include: {
-                            friend: {
+                            chatWorkSpace: {
                                 include: {
                                     user: true,
                                 },
                             },
+                        },
+                    },
+                    Friend: {
+                        include: {
+                            friend: {
+                                include: {
+                                    user: {
+                                        include: {
+                                            chatWorkSpaces: {
+                                                include: {
+                                                    Friend: {
+                                                        where: {
+                                                            workspace: {
+                                                                id: workspace,
+                                                            },
+                                                            friend: {
+                                                                id: user2.id,
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
                             chat: {
                                 include: {
-                                    workspace: true,
                                     msges: {
                                         include: {
                                             from: true,
@@ -454,8 +567,61 @@ function makeUserAFriend(user1, user2, workspace, content, type, url) {
                     },
                 },
             });
-            let toSendUser1 = user1_.Friend.at(-1);
-            let toSendUser2 = user2_.Friend.at(-1);
+            user1_msg = yield prisma.chatWorkSpace.findUnique({
+                where: {
+                    id: user1.id,
+                },
+                include: {
+                    user: true,
+                    workspaces: {
+                        include: {
+                            chatWorkSpace: {
+                                include: {
+                                    user: true,
+                                },
+                            },
+                        },
+                    },
+                    Friend: {
+                        include: {
+                            friend: {
+                                include: {
+                                    user: {
+                                        include: {
+                                            chatWorkSpaces: {
+                                                include: {
+                                                    Friend: {
+                                                        where: {
+                                                            workspace: {
+                                                                id: workspace,
+                                                            },
+                                                            friend: {
+                                                                id: user1.id,
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                            chat: {
+                                include: {
+                                    msges: {
+                                        include: {
+                                            from: true,
+                                            replys: true,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+            let toSendUser1 = user1_msg.Friend.at(-1);
+            let toSendUser2 = user2_msg.Friend.at(-1);
             return { toSendUser1, toSendUser2 };
         }
         catch (error) {
@@ -464,3 +630,39 @@ function makeUserAFriend(user1, user2, workspace, content, type, url) {
     });
 }
 exports.makeUserAFriend = makeUserAFriend;
+function incrementUnread(friendId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            let prisma = (0, db_config_1.getDb)();
+            yield prisma.friend.update({
+                where: {
+                    id: friendId,
+                },
+                data: {
+                    unRead: {
+                        increment: 1,
+                    },
+                },
+            });
+        }
+        catch (error) {
+            throw error;
+        }
+    });
+}
+exports.incrementUnread = incrementUnread;
+function ZeroUnread(friednId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            let prisma = (0, db_config_1.getDb)();
+            yield prisma.friend.update({
+                where: { id: friednId },
+                data: { unRead: 0 },
+            });
+        }
+        catch (error) {
+            throw error;
+        }
+    });
+}
+exports.ZeroUnread = ZeroUnread;

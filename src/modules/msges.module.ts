@@ -1,9 +1,11 @@
 import date from "date-and-time";
 import { getDb } from "../config/db.config";
-async function addMsg(chatId, type, content, from, url, group) {
+import { incrementUnread } from "./user.module";
+async function addMsg(chatId, type, content, from, url, group, friendId) {
   if (url == undefined) {
     url = "";
   }
+
   try {
     let prisma = getDb();
     if (!group) {
@@ -27,6 +29,7 @@ async function addMsg(chatId, type, content, from, url, group) {
           from: true,
         },
       });
+      incrementUnread(friendId);
 
       let msg = _;
 

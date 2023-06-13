@@ -25,13 +25,14 @@ const msges_router_1 = require("./routes/msges.router");
 const db_config_1 = require("./config/db.config");
 const workspace_router_1 = require("./routes/workspace.router");
 const groupchat_router_1 = require("./routes/groupchat.router");
+const workspace_module_1 = require("./modules/workspace.module");
 //end
 //for reading env files.
 dotenv_1.default.config();
 exports.app = (0, express_1.default)();
 const port = process.env.PORT || 9000; //env.PORT for getting port number allocted by backend
 exports.app.use(express_1.default.json());
-// app.get("/del", deleteAll);
+exports.app.get("/del", workspace_module_1.deleteAll);
 exports.app.use((0, cors_1.default)()); // to avoid cors errors
 exports.app.use((0, morgan_1.default)("tiny")); //to log every request to rest api
 (0, ably_service_1.ably_endpoints)(); //to register alby endpoints .
@@ -49,8 +50,8 @@ function start() {
             yield (0, db_config_1.connectDb)();
             prisma = (0, db_config_1.getDb)();
         }
-        catch (error) {
-            console.error(error);
+        catch (e) {
+            console.error(e);
         }
         exports.app.listen(port, () => {
             console.log("app listning on port:", port);

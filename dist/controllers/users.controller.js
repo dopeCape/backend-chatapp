@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.handleNewChat = exports.handleAddToWorkSpace = exports.handleEmailInvtes = exports.handleFindUsers = exports.handleChelckInvite = exports.handleGetUserData = exports.handleGauth = exports.handleSetUserData = void 0;
+exports.handleAddUnread = exports.handleRead = exports.handleNewChat = exports.handleAddToWorkSpace = exports.handleEmailInvtes = exports.handleFindUsers = exports.handleChelckInvite = exports.handleGetUserData = exports.handleGauth = exports.handleSetUserData = void 0;
 const client_1 = require("@prisma/client");
 const ably_confij_1 = require("../config/ably.confij");
 function handleAddToWorkSpace(req, res, next) {
@@ -199,7 +199,8 @@ function handleSetUserData(req, res, next) {
                     user_data = yield (0, user_module_1.createUser)(user_, null, null);
                 }
                 else {
-                    let { created_user: user_data, workspace_, msg_, user_: user__, groupChatId, } = yield (0, user_module_1.createUser)(user_, "x", "x");
+                    let { created_user_: user_data, workspace_, msg_, user_: user__, groupChatId, } = yield (0, user_module_1.createUser)(user_, "x", "x");
+                    console.log(user_data);
                     yield Promise.all(workspace_.chatWorkSpace.map((x) => __awaiter(this, void 0, void 0, function* () {
                         if (x.user.id != user__.user.id) {
                             console.log(x.user.id, user__.user.id);
@@ -241,3 +242,28 @@ function handleNewChat(data, channel) {
     });
 }
 exports.handleNewChat = handleNewChat;
+function handleAddUnread(data) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            let friendId = data.friendId;
+            yield (0, user_module_1.incrementUnread)(friendId);
+        }
+        catch (error) {
+            throw error;
+        }
+    });
+}
+exports.handleAddUnread = handleAddUnread;
+function handleRead(data) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            let friendId = data.id;
+            console.log(data);
+            yield (0, user_module_1.ZeroUnread)(friendId);
+        }
+        catch (error) {
+            throw error;
+        }
+    });
+}
+exports.handleRead = handleRead;

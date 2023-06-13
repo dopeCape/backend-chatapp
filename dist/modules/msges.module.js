@@ -11,7 +11,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.editMsg = exports.deleteMsg = exports.addMsg = void 0;
 const db_config_1 = require("../config/db.config");
-function addMsg(chatId, type, content, from, url, group) {
+const user_module_1 = require("./user.module");
+function addMsg(chatId, type, content, from, url, group, friendId) {
     return __awaiter(this, void 0, void 0, function* () {
         if (url == undefined) {
             url = "";
@@ -38,6 +39,7 @@ function addMsg(chatId, type, content, from, url, group) {
                         from: true,
                     },
                 });
+                (0, user_module_1.incrementUnread)(friendId);
                 let msg = _;
                 return { msg };
             }

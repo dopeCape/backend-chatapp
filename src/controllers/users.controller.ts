@@ -147,9 +147,11 @@ async function handleGauth(req: Request, res: Response, next) {
 }
 
 import {
+  ZeroUnread,
   createUser,
   getInvite,
   getUserData,
+  incrementUnread,
   makeUserAFriend,
   searchUser,
   sendEmailInvite,
@@ -202,12 +204,14 @@ async function handleSetUserData(req, res, next) {
         user_data = await createUser(user_, null, null);
       } else {
         let {
-          created_user: user_data,
+          created_user_: user_data,
           workspace_,
           msg_,
           user_: user__,
           groupChatId,
         } = await createUser(user_, "x", "x");
+
+        console.log(user_data);
         await Promise.all(
           workspace_.chatWorkSpace.map(async (x) => {
             if (x.user.id != user__.user.id) {
@@ -260,108 +264,26 @@ async function handleNewChat(data, channel) {
     console.log(error);
   }
 }
-//
-// async function handleSendRequest(data, channel) {
-//   let [from, to] = data;
-//   try {
-//     let [_, user] = await sendRequest(from, to);
-//     if (user == "request already sent") {
-//     } else {
-//       channel.publish("send-request", user);
-//     }
-//   } catch (error) {
-//     throw error;
-//   }
-// }
-//
-// async function handleDelteAllUsers(req, res) {
-//   try {
-//     await deleteAllUsers();
-//     res.send("delted all users");
-//   } catch (error) {}
-// }
-//
-// async function handleAcceptRequest(data, channel) {
-//   let [from, to, chatId] = data;
-//   try {
-//     let [from_user] = await acceptRequest(from, to, chatId);
-//     channel.publish("accept-request", { from_user, chatId });
-//   } catch (error) {
-//     throw error;
-//   }
-// }
-// async function handleRejectRequest(data, channel) {
-//   let [from, to] = data;
-//   try {
-//     let from_user = await rejectRequest(from, to);
-//
-//     channel.publish("reject-request", { from_user, to });
-//   } catch (error) {
-//     throw error;
-//   }
-// }
-//
-// async function handleBlockUser(data, channel) {
-//   let [from, to] = data;
-//   try {
-//     let to_user = await blockRequest(from, to);
-//     channel.publish("block-request", { to_user, from });
-//   } catch (error) {
-//     throw error;
-//   }
-// }
-// async function handleUnBlockUser(data, channel) {
-//   let [from, to] = data;
-//   try {
-//     let to_user = await unBlockRequest(from, to);
-//
-//     channel.publish("unblock-request", { to_user, from });
-//   } catch (error) {
-//     throw error;
-//   }
-// }
-// async function handleRemoveFriend(data, channel) {
-//   let [from, to] = data;
-//   try {
-//     let to_user = await removeFriendRequest(from, to);
-//
-//     channel.publish("unblock-request", to_user);
-//   } catch (error) {
-//     throw error;
-//   }
-// }
-//
-// async function handleUserTyping(data, channel) {
-//   let [from, to, chatId] = data;
-//
-//   try {
-//     channel.publish("user-typing", { from, chatId });
-//   } catch (error) {}
-// }
-// async function handleUserNotTyping(data, channel) {
-//   let [from, to, chatId] = data;
-//
-//   try {
-//     channel.publish("user-typing", { from, chatId });
-//   } catch (error) {}
-// }
-//
-// export {
-//   handleGetUserData,
-//   handleSetUserData,
-//   handleChelckUserName,
-//   handleGauth,
-//   handleSearchUser,
-//   handleSendRequest,
-//   handleAcceptRequest,
-//   handleDelteAllUsers,
-//   handleRemoveFriend,
-//   handleRejectRequest,
-//   handleBlockUser,
-//   handleUnBlockUser,
-//   handleUserTyping,
-//   handleUserNotTyping,
-// };
+async function handleAddUnread(data) {
+  try {
+    let friendId = data.friendId;
+    await incrementUnread(friendId);
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function handleRead(data) {
+  try {
+    let friendId = data.id;
+    console.log(data);
+
+    await ZeroUnread(friendId);
+  } catch (error) {
+    throw error;
+  }
+}
+
 export {
   handleSetUserData,
   handleGauth,
@@ -371,4 +293,6 @@ export {
   handleEmailInvtes,
   handleAddToWorkSpace,
   handleNewChat,
+  handleRead,
+  handleAddUnread,
 };

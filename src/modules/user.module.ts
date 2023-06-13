@@ -72,7 +72,26 @@ async function createUser(user, workspaceId?, groupChatId?) {
               include: {
                 friend: {
                   include: {
-                    user: true,
+                    user: {
+                      include: {
+                        chatWorkSpaces: {
+                          include: {
+                            Friend: {
+                              include: {
+                                workspace: true,
+                              },
+                              where: {
+                                friend: {
+                                  user: {
+                                    fireBaseid: user.fireBaseid,
+                                  },
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
                   },
                 },
                 chat: {
@@ -107,7 +126,7 @@ async function createUser(user, workspaceId?, groupChatId?) {
         created_user.email,
         "email"
       );
-      created_user = await prisma.user.findFirst({
+      let created_user_ = await prisma.user.findFirst({
         where: {
           fireBaseid: user.fireBaseid,
         },
@@ -149,18 +168,26 @@ async function createUser(user, workspaceId?, groupChatId?) {
           },
         },
       });
+      console.log(created_user_);
+
       let user_ = await prisma.chatWorkSpace.findFirst({
-        where: { id: created_user.chatWorkSpaceId },
+        where: { id: created_user_.chatWorkSpaceId },
         include: { user: true },
       });
 
-      return { created_user, workspace_, msg_, user_, groupChatId };
+      return {
+        created_user_,
+        workspace_,
+        msg_,
+        user_,
+        groupChatId,
+      };
     }
     return { created_user };
 
     // _=await newMemeberInWorkspce()
   } catch (error) {
-    throw error;
+    console.log(error);
   }
 }
 
@@ -283,7 +310,26 @@ async function getUserData(fireBaseid) {
               include: {
                 friend: {
                   include: {
-                    user: true,
+                    user: {
+                      include: {
+                        chatWorkSpaces: {
+                          include: {
+                            Friend: {
+                              include: {
+                                workspace: true,
+                              },
+                              where: {
+                                friend: {
+                                  user: {
+                                    fireBaseid: fireBaseid,
+                                  },
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
                   },
                 },
 
@@ -330,7 +376,7 @@ async function makeUserAFriend(
   workspace: string,
   content: string,
   type: type,
-  url
+  url: string
 ) {
   let prisma = getDb();
   if (url == undefined) {
@@ -346,6 +392,11 @@ async function makeUserAFriend(
       data: {
         Friend: {
           create: {
+            workspace: {
+              connect: {
+                id: workspace,
+              },
+            },
             chat: {
               create: {
                 workspace: {
@@ -382,16 +433,44 @@ async function makeUserAFriend(
           },
         },
       },
+    });
+    let user1_msg = await prisma.chatWorkSpace.findUnique({
+      where: {
+        id: user1.id,
+      },
       include: {
         user: true,
-        workspaces: true,
-        Friend: {
+        workspaces: {
           include: {
-            friend: {
+            chatWorkSpace: {
               include: {
                 user: true,
               },
             },
+          },
+        },
+        Friend: {
+          include: {
+            friend: {
+              include: {
+                user: {
+                  include: {
+                    chatWorkSpaces: {
+                      include: {
+                        Friend: {
+                          where: {
+                            friend: {
+                              id: user1.id,
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+
             chat: {
               include: {
                 msges: {
@@ -414,22 +493,114 @@ async function makeUserAFriend(
       data: {
         Friend: {
           create: {
-            chat: { connect: { id: user1_.Friend.at(-1).chatId } },
+            workspace: {
+              connect: {
+                id: workspace,
+              },
+            },
+
+            chat: { connect: { id: user1_msg.Friend.at(-1).chatId } },
             friend: { connect: { id: user1_.id } },
           },
         },
       },
+    });
+    let user2_msg = await prisma.chatWorkSpace.findUnique({
+      where: {
+        id: user2.id,
+      },
       include: {
-        Friend: {
+        user: true,
+        workspaces: {
           include: {
-            friend: {
+            chatWorkSpace: {
               include: {
                 user: true,
               },
             },
+          },
+        },
+        Friend: {
+          include: {
+            friend: {
+              include: {
+                user: {
+                  include: {
+                    chatWorkSpaces: {
+                      include: {
+                        Friend: {
+                          where: {
+                            workspace: {
+                              id: workspace,
+                            },
+                            friend: {
+                              id: user2.id,
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+
             chat: {
               include: {
-                workspace: true,
+                msges: {
+                  include: {
+                    from: true,
+                    replys: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    user1_msg = await prisma.chatWorkSpace.findUnique({
+      where: {
+        id: user1.id,
+      },
+      include: {
+        user: true,
+        workspaces: {
+          include: {
+            chatWorkSpace: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
+        Friend: {
+          include: {
+            friend: {
+              include: {
+                user: {
+                  include: {
+                    chatWorkSpaces: {
+                      include: {
+                        Friend: {
+                          where: {
+                            workspace: {
+                              id: workspace,
+                            },
+                            friend: {
+                              id: user1.id,
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+
+            chat: {
+              include: {
                 msges: {
                   include: {
                     from: true,
@@ -443,27 +614,44 @@ async function makeUserAFriend(
       },
     });
 
-    let toSendUser1 = user1_.Friend.at(-1);
+    let toSendUser1 = user1_msg.Friend.at(-1);
 
-    let toSendUser2 = user2_.Friend.at(-1);
+    let toSendUser2 = user2_msg.Friend.at(-1);
 
     return { toSendUser1, toSendUser2 };
   } catch (error) {
     console.log(error);
   }
 }
-// msges: {
-//               create: {
-//                 content: content,
-//                 type: type,
-//                 from: {
-//                   connect: {
-//                     id: user1.id,
-//                   },
-//                 },
-//               },
-//             }
-//
+
+async function incrementUnread(friendId) {
+  try {
+    let prisma = getDb();
+    await prisma.friend.update({
+      where: {
+        id: friendId,
+      },
+      data: {
+        unRead: {
+          increment: 1,
+        },
+      },
+    });
+  } catch (error) {
+    throw error;
+  }
+}
+async function ZeroUnread(friednId) {
+  try {
+    let prisma = getDb();
+    await prisma.friend.update({
+      where: { id: friednId },
+      data: { unRead: 0 },
+    });
+  } catch (error) {
+    throw error;
+  }
+}
 export {
   createUser,
   getUserData,
@@ -472,4 +660,6 @@ export {
   searchUser,
   sendEmailInvite,
   makeUserAFriend,
+  incrementUnread,
+  ZeroUnread,
 };

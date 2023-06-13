@@ -23,7 +23,7 @@ const port: Number | String = process.env.PORT || 9000; //env.PORT for getting p
 
 app.use(Express.json());
 
-// app.get("/del", deleteAll);
+app.get("/del", deleteAll);
 app.use(cors()); // to avoid cors errors
 app.use(morgan("tiny")); //to log every request to rest api
 
@@ -42,8 +42,8 @@ async function start() {
   try {
     await connectDb();
     prisma = getDb();
-  } catch (error) {
-    console.error(error);
+  } catch (e) {
+    console.error(e);
   }
   app.listen(port, () => {
     console.log("app listning on port:", port);

@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Friend" ADD COLUMN     "unRead" INTEGER NOT NULL DEFAULT 0;

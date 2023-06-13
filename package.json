@@ -28,6 +28,7 @@
     "uuid": "^9.0.0"
   },
   "devDependencies": {
+    "@briandlee/smuggler": "^0.2.2",
     "cross-env": "^7.0.3",
     "prisma": "^4.14.1"
   }

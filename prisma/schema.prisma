@@ -31,10 +31,8 @@ model Chat {
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
   workspaceId String
   typing      Boolean   @default(false)
-
-  Friend Friend[]
-
-  msges msges[]
+  Friend      Friend[]
+  msges       msges[]
 }
 
 model groupChat {
@@ -87,6 +85,7 @@ model Workspace {
   groupChatId   String[]        @unique
   chatWorkSpace chatWorkSpace[]
   Invites       Invites[]
+  Friend        Friend[]
 }
 
 enum Role {
@@ -98,10 +97,13 @@ model Friend {
   id              String         @id @unique() @default(cuid())
   chat            Chat           @relation(fields: [chatId], references: [id], onDelete: Cascade)
   chatId          String
+  unRead          Int            @default(0)
+  workspace       Workspace      @relation(fields: [workspaceId], references: [id])
   chatWorkSpace   chatWorkSpace? @relation("me", fields: [chatWorkSpaceId], references: [id], onDelete: Cascade)
   chatWorkSpaceId String?
   friend          chatWorkSpace? @relation("friend", fields: [friendId], references: [id], onDelete: Cascade)
   friendId        String?
+  workspaceId     String
 }
 
 model chatWorkSpace {
