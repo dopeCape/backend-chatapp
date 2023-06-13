@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "tsc-watch  --compiler /usr/bin/tsc --onSuccess \" cross-env ENV='dev' node ./dist/index.js \" ",
     "test": "yarn node --experimental-vm-modules  $(yarn bin jest ) --config ././jest.config.js --detectOpenHandles --TEST=ALL  ",
-    "start": " node dist/index.js"
+    "start": "prisma generate && node src/server.js"
   },
   "dependencies": {
     "@babel/preset-env": "^7.21.5",
