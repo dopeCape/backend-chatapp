@@ -3,5 +3,6 @@ node_modules
 firebaseconfig.json
 dist/firebaseconfig.json
 package-lock.json
+dist
 
 
