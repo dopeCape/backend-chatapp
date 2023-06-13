@@ -7,7 +7,16 @@
   "scripts": {
     "dev": "tsc-watch  --compiler /usr/bin/tsc --onSuccess \" cross-env ENV='dev' node ./dist/index.js \" ",
     "test": "yarn node --experimental-vm-modules  $(yarn bin jest ) --config ././jest.config.js --detectOpenHandles --TEST=ALL  ",
-    "start": "prisma generate && node src/server.js"
+    "start": "node dist/server.js",
+    "build": "npm run prisma:generate && npm run tsc",
+    "prisma:generate": "prisma generate",
+    "tsc": "tsc"
+  },
+  "now": {
+    "build": {
+      "src": "build",
+      "command": "npm run build"
+    }
   },
   "dependencies": {
     "@babel/preset-env": "^7.21.5",
@@ -29,6 +38,6 @@
   "devDependencies": {
     "@briandlee/smuggler": "^0.2.2",
     "cross-env": "^7.0.3",
-    "prisma": "^4.14.1"
+    "prisma": "^4.15.0"
   }
 }
