@@ -105,11 +105,16 @@ async function createUser(user, workspaceId?, groupChatId?) {
                 },
               },
             },
-            groupChats: {
+
+            groupChatRef: {
               include: {
-                msges: {
+                groupChat: {
                   include: {
-                    replys: true,
+                    msges: {
+                      include: {
+                        replys: true,
+                      },
+                    },
                   },
                 },
               },
@@ -155,11 +160,15 @@ async function createUser(user, workspaceId?, groupChatId?) {
                   },
                 },
               },
-              groupChats: {
+              groupChatRef: {
                 include: {
-                  msges: {
+                  groupChat: {
                     include: {
-                      replys: true,
+                      msges: {
+                        include: {
+                          replys: true,
+                        },
+                      },
                     },
                   },
                 },
@@ -346,17 +355,25 @@ async function getUserData(fireBaseid) {
               },
             },
 
-            groupChats: {
+            groupChatRef: {
               include: {
-                msges: {
+                groupChat: {
                   include: {
-                    from: true,
-                    replys: true,
-                  },
-                },
-                user: {
-                  include: {
-                    user: true,
+                    msges: {
+                      include: {
+                        from: true,
+                        replys: true,
+                      },
+                    },
+                    groupChatRef: {
+                      include: {
+                        user: {
+                          include: {
+                            user: true,
+                          },
+                        },
+                      },
+                    },
                   },
                 },
               },

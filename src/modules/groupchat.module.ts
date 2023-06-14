@@ -12,16 +12,33 @@ async function addMemebToGroup(users, workspaceId, groupId, name) {
       msg = msg + ` ${x.user.name} `;
     });
   }
+  let groupChatRefIds = [];
+
   try {
     let prisma = getDb();
+    connectUsers.forEach(async (x) => {
+      await prisma.groupChatRef.create({
+        data: {
+          user: {
+            connect: {
+              id: x,
+            },
+          },
+        },
+      });
+    });
+
     let group_ = await prisma.groupChat.update({
       where: {
         id: groupId,
       },
       data: {
-        user: {
-          connect: connectUsers,
+        groupChatRef: {
+          connect: {
+            id: connectUsers,
+          },
         },
+
         msges: {
           create: {
             content: msg,
@@ -30,9 +47,13 @@ async function addMemebToGroup(users, workspaceId, groupId, name) {
         },
       },
       include: {
-        user: {
+        groupChatRef: {
           include: {
-            user: true,
+            user: {
+              include: {
+                user: true,
+              },
+            },
           },
         },
         msges: {
@@ -67,6 +88,7 @@ async function createNewGruop(workspaceId, users, user, name) {
         msg = msg + ` ${x.user.name}`;
       }
     });
+    const connectRef = [];
 
     let group_ = await prisma.groupChat.create({
       data: {
@@ -76,9 +98,7 @@ async function createNewGruop(workspaceId, users, user, name) {
             id: workspaceId,
           },
         },
-        user: {
-          connect: connectUsers,
-        },
+
         admin: {
           connect: {
             id: user.id,
@@ -98,9 +118,13 @@ async function createNewGruop(workspaceId, users, user, name) {
         },
       },
       include: {
-        user: {
+        groupChatRef: {
           include: {
-            user: true,
+            user: {
+              include: {
+                user: true,
+              },
+            },
           },
         },
         msges: {
@@ -111,12 +135,29 @@ async function createNewGruop(workspaceId, users, user, name) {
         },
       },
     });
+    connectUsers.forEach(async (x) => {
+      let chatRef = await prisma.groupChatRef.create({
+        data: {
+          user: {
+            connect: {
+              id: x,
+            },
+          },
+          groupChat: {
+            connect: {
+              id: group_.id,
+            },
+          },
+        },
+      });
+      connectRef.push(chatRef.id);
+    });
     return group_;
   } catch (error) {
     throw error;
   }
 }
-async function removeUser(msg, userId, chatId) {
+async function removeUser(msg, userId, chatId, groupChatRefId) {
   try {
     let prisma = getDb();
 
@@ -131,23 +172,25 @@ async function removeUser(msg, userId, chatId) {
             content: msg,
           },
         },
-        user: {
-          disconnect: {
-            id: userId,
-          },
+        groupChatRef: {
+          disconnect: groupChatRefId,
         },
       },
       include: {
         msges: true,
-        user: {
+        groupChatRef: {
           include: {
-            user: true,
+            user: {
+              include: {
+                user: true,
+              },
+            },
           },
         },
       },
     });
     let x = gruop_.msges.at(-1);
-    let users = gruop_.user;
+    let users = gruop_.groupChatRef;
     return { x, users };
   } catch (error) {
     console.log(error);

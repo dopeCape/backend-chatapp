@@ -18,10 +18,12 @@ async function addUserToWorkSpace(
             include: {
               chatWorkSpace: {
                 include: {
-                  groupChats: {
+                  groupChatRef: {
                     where: {
-                      name: {
-                        search: "general",
+                      groupChat: {
+                        name: {
+                          search: "general",
+                        },
                       },
                     },
                   },
@@ -72,20 +74,59 @@ async function addUserToWorkSpace(
           },
         },
       });
-      await prisma.chatWorkSpace.update({
-        where: {
-          id: chatWorkspaceId,
-        },
+      let groupChatRef_ = await prisma.groupChatRef.create({
         data: {
-          groupChats: {
+          user: {
+            connect: {
+              id: chatWorkspaceId,
+            },
+          },
+          groupChat: {
             connect: {
               id: groupChat_.id,
             },
           },
         },
+        include: {
+          groupChat: {
+            include: {
+              msges: {
+                include: {
+                  from: true,
+                  replys: true,
+                },
+              },
+              groupChatRef: {
+                include: {
+                  user: {
+                    include: {
+                      user: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          user: {
+            include: {
+              user: true,
+            },
+          },
+        },
       });
 
-      return { msg_, workspace_, groupChatId };
+      await prisma.chatWorkSpace.update({
+        where: {
+          id: chatWorkspaceId,
+        },
+        data: {
+          groupChatRef: {
+            connect: { id: groupChatRef_.id },
+          },
+        },
+      });
+
+      return { msg_, workspace_, groupChatId, groupChatRef_ };
     } else {
       let workspace_ = await prisma.workspace.update({
         where: {
@@ -125,17 +166,46 @@ async function addUserToWorkSpace(
           msges: {
             connect: { id: msg_.id },
           },
+        },
+        include: {
+          msges: {
+            include: {
+              replys: true,
+            },
+          },
+        },
+      });
+      let groupChatRef_ = await prisma.groupChatRef.create({
+        data: {
           user: {
             connect: {
               id: chatWorkspaceId,
             },
           },
+          groupChat: {
+            connect: {
+              id: groupChat_.id,
+            },
+          },
         },
-
         include: {
-          msges: {
+          groupChat: {
             include: {
-              replys: true,
+              msges: {
+                include: {
+                  from: true,
+                  replys: true,
+                },
+              },
+              groupChatRef: {
+                include: {
+                  user: {
+                    include: {
+                      user: true,
+                    },
+                  },
+                },
+              },
             },
           },
           user: {
@@ -149,19 +219,20 @@ async function addUserToWorkSpace(
         where: {
           id: chatWorkspaceId,
         },
-        data: {
-          groupChats: {
-            connect: {
-              id: groupChat_.id,
-            },
-          },
-        },
+        data: {},
         include: {
           user: true,
         },
       });
 
-      return { workspace_, groupChat_, msg_, groupChatId, user_ };
+      return {
+        workspace_,
+        groupChat_,
+        msg_,
+        groupChatId,
+        user_,
+        groupChatRef_,
+      };
     }
   } catch (error) {
     throw error;
@@ -189,34 +260,54 @@ async function createWrokspace(workspace, chatWorkspaceId, userId) {
         chatWorkSpace: true,
       },
     });
-    let groupChat = await prisma.groupChat.create({
+    let groupChat = await prisma.groupChatRef.create({
       data: {
-        name: "general",
-        workspace: { connect: { id: workspace_.id } },
-        admin: {
-          connect: {
-            id: userId,
-          },
-        },
-        msges: {
-          create: {
-            content: `${user.user.name} created ${workspace.name}`,
-            type: type.CMD,
-          },
-        },
         user: {
           connect: {
-            id: chatWorkspaceId,
+            id: user.id,
+          },
+        },
+
+        groupChat: {
+          create: {
+            name: "general",
+            workspace: { connect: { id: workspace_.id } },
+            admin: {
+              connect: {
+                id: userId,
+              },
+            },
+            msges: {
+              create: {
+                content: `${user.user.name} created ${workspace.name}`,
+                type: type.CMD,
+              },
+            },
           },
         },
       },
+
       include: {
-        msges: true,
-        user: {
+        groupChat: {
           include: {
-            user: true,
+            msges: {
+              include: {
+                replys: true,
+                from: true,
+              },
+            },
+            groupChatRef: {
+              include: {
+                user: {
+                  include: {
+                    user: true,
+                  },
+                },
+              },
+            },
           },
         },
+        user: true,
       },
     });
     let chatWorkSpace_ = await prisma.chatWorkSpace.update({

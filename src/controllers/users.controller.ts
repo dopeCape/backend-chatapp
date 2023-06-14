@@ -6,7 +6,7 @@ async function handleAddToWorkSpace(req, res, next) {
   let { chatWorkSpaceId, name, email, user_, workSpaceId } = req.body;
 
   try {
-    let { msg_, workspace_, groupChatId, groupChat_, user_ } =
+    let { msg_, workspace_, groupChatId, groupChat_, user_, groupChatRef_ } =
       await addUserToWorkSpace(
         chatWorkSpaceId,
         name,
@@ -14,21 +14,12 @@ async function handleAddToWorkSpace(req, res, next) {
         "null",
         workSpaceId
       );
-    console.log(workspace_.chatWorkSpace);
-
-    await newMemeberInWorkspce(
-      "iEthxenlKU",
-      msg_,
-      user_,
-      groupChatId,
-      workSpaceId
-    );
 
     workspace_.chatWorkSpace.map((x) => {
       if (x.user.id != user_.user.id) {
         newMemeberInWorkspce(x.user.id, msg_, user_, groupChatId, workSpaceId);
       } else {
-        newMemeberAdder(user_.user.id, workspace_, groupChat_);
+        newMemeberAdder(user_.user.id, workspace_, groupChatRef_);
       }
     });
 
@@ -211,7 +202,6 @@ async function handleSetUserData(req, res, next) {
           groupChatId,
         } = await createUser(user_, "x", "x");
 
-        console.log(user_data);
         await Promise.all(
           workspace_.chatWorkSpace.map(async (x) => {
             if (x.user.id != user__.user.id) {

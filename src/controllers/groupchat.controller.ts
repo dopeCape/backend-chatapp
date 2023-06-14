@@ -17,8 +17,8 @@ async function handleCreateNewGroup(req, res, next) {
 
     let group_ = await createNewGruop(workspaceId, users, user, name);
 
-    group_.user.forEach((user) => {
-      newGroupChat(user.user.id, group_);
+    group_.groupChatRef.forEach((user) => {
+      newGroupChat(user.user.user.id, group_);
     });
     res.send("created");
   } catch (error) {
@@ -44,12 +44,12 @@ async function handleAddUseToGroup(req, res, next) {
       groupChatId,
       name
     );
-    groupChat.user.forEach((x) => {
+    groupChat.groupChatRef.forEach((x) => {
       if (chelckIfArrayExistss(users, x)) {
-        newGroupChat(x.user.id, groupChat);
+        newGroupChat(x.user.user.id, groupChat);
       } else {
         newMemberInGroup(
-          x.user.id,
+          x.user.user.id,
           groupChat.id,
           groupChat.msges.at(-1),
           users
@@ -64,9 +64,9 @@ async function handleAddUseToGroup(req, res, next) {
 
 async function handleRemoveUser(req, res, next) {
   try {
-    let { msg, userid: userId, groupId, userxid } = req.body;
+    let { msg, userid: userId, groupId, userxid, groupChatRefId } = req.body;
 
-    let { x, users } = await removeUser(msg, userId, groupId);
+    let { x, users } = await removeUser(msg, userId, groupId, groupChatRefId);
 
     console.log(users);
 
