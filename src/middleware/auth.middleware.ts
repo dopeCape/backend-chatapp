@@ -1,4 +1,4 @@
-import { admin } from "../config/firebse.config.js";
+import { admin } from "../config/firebse.config";
 async function verifyUser(req, res, next) {
   const token = req.headers.authorization.split(" ")[1];
 

@@ -1,5 +1,7 @@
-import admin from "firebase-admin";
-// import fig from "../../firebaseconfig.json";
+import * as admin from "firebase-admin";
+
+import dotenv from "dotenv";
+dotenv.config();
 
 const firebase_private_key_b64 = Buffer.from(
   process.env.FIREBASE_KEYS,
