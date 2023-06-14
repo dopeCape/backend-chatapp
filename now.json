@@ -5,6 +5,12 @@
   "build": {
     "env": {
       "PRISMA_GENERATE": "npm run prisma:generate"
+    },
+    "functions": {
+      "src/**/*.js": {
+        "runtime": "@now/node@1.15.0",
+        "memory": 1024
+      }
     }
   }
 }
