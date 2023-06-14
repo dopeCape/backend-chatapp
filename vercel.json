@@ -2,13 +2,12 @@
   "version": 2,
   "builds": [{ "src": "src/**/*.ts", "use": "@now/node" }],
   "routes": [{ "src": "/(.*)*", "dest": "dist/index.js" }],
-  "build": {
+  "builds": {
     "env": {
       "PRISMA_GENERATE": "npm run prisma:generate"
     },
     "scripts": {
-      "prebuild": "npm run prisma:generate",
-      "build": "npm run tsc"
+      "build": "vercel-build"
     }
   }
 }
