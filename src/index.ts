@@ -18,7 +18,7 @@ import { deleteAll } from "./modules/workspace.module";
 //for reading env files.
 dotenv.config();
 
-export const app: Application = Express();
+const app: Application = Express();
 const port: Number | String = process.env.PORT || 9000; //env.PORT for getting port number allocted by backend
 
 app.use(Express.json());
@@ -51,3 +51,4 @@ async function start() {
 }
 
 start().then(async () => await prisma.$disconnect()); //main function
+export default app;
