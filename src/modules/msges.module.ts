@@ -1,11 +1,20 @@
 import date from "date-and-time";
 import { getDb } from "../config/db.config";
 import { incrementUnread } from "./user.module";
-async function addMsg(chatId, type, content, from, url, group, friendId) {
+import { incrementUnRead } from "./groupchat.module";
+async function addMsg(
+  chatId,
+  type,
+  content,
+  from,
+  url,
+  group,
+  friendId,
+  myChatRef
+) {
   if (url == undefined) {
     url = "";
   }
-
   try {
     let prisma = getDb();
     if (!group) {
@@ -57,7 +66,29 @@ async function addMsg(chatId, type, content, from, url, group, friendId) {
       });
 
       let msg = _;
+      let groupChatRefs = await prisma.groupChat.findUnique({
+        where: {
+          id: chatId,
+        },
+        include: {
+          groupChatRef: {
+            include: {
+              user: {
+                include: {
+                  user: true,
+                },
+              },
+            },
+          },
+        },
+      });
 
+      console.log(myChatRef);
+      groupChatRefs.groupChatRef.forEach((x) => {
+        if (x.id !== myChatRef) {
+          incrementUnRead(x.id);
+        }
+      });
       return { msg };
     }
   } catch (error) {

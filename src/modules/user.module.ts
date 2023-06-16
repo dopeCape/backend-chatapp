@@ -105,11 +105,16 @@ async function createUser(user, workspaceId?, groupChatId?) {
                 },
               },
             },
-            groupChats: {
+
+            groupChatRef: {
               include: {
-                msges: {
+                groupChat: {
                   include: {
-                    replys: true,
+                    msges: {
+                      include: {
+                        replys: true,
+                      },
+                    },
                   },
                 },
               },
@@ -120,12 +125,13 @@ async function createUser(user, workspaceId?, groupChatId?) {
     });
     let msg = null;
     if (workspaceId != null) {
-      let { msg_, workspace_, groupChatId } = await addUserToWorkSpace(
-        created_user.chatWorkSpaceId,
-        created_user.name,
-        created_user.email,
-        "email"
-      );
+      let { msg_, workspace_, groupChatId, groupChatRef_ } =
+        await addUserToWorkSpace(
+          created_user.chatWorkSpaceId,
+          created_user.name,
+          created_user.email,
+          "email"
+        );
       let created_user_ = await prisma.user.findFirst({
         where: {
           fireBaseid: user.fireBaseid,
@@ -155,11 +161,15 @@ async function createUser(user, workspaceId?, groupChatId?) {
                   },
                 },
               },
-              groupChats: {
+              groupChatRef: {
                 include: {
-                  msges: {
+                  groupChat: {
                     include: {
-                      replys: true,
+                      msges: {
+                        include: {
+                          replys: true,
+                        },
+                      },
                     },
                   },
                 },
@@ -168,7 +178,6 @@ async function createUser(user, workspaceId?, groupChatId?) {
           },
         },
       });
-      console.log(created_user_);
 
       let user_ = await prisma.chatWorkSpace.findFirst({
         where: { id: created_user_.chatWorkSpaceId },
@@ -181,6 +190,7 @@ async function createUser(user, workspaceId?, groupChatId?) {
         msg_,
         user_,
         groupChatId,
+        groupChatRef_,
       };
     }
     return { created_user };
@@ -346,17 +356,25 @@ async function getUserData(fireBaseid) {
               },
             },
 
-            groupChats: {
+            groupChatRef: {
               include: {
-                msges: {
+                groupChat: {
                   include: {
-                    from: true,
-                    replys: true,
-                  },
-                },
-                user: {
-                  include: {
-                    user: true,
+                    msges: {
+                      include: {
+                        from: true,
+                        replys: true,
+                      },
+                    },
+                    groupChatRef: {
+                      include: {
+                        user: {
+                          include: {
+                            user: true,
+                          },
+                        },
+                      },
+                    },
                   },
                 },
               },

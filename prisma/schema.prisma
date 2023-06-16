@@ -37,15 +37,16 @@ model Chat {
 
 model groupChat {
   name        String
-  id          String          @id @unique @default(cuid())
-  workspace   Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  id          String    @id @unique @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   workspaceId String
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime?       @updatedAt
-  user        chatWorkSpace[]
-  admin       User            @relation(fields: [userId], references: [id])
-  msges       msges[]
-  userId      String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime? @updatedAt
+
+  admin        User           @relation(fields: [userId], references: [id])
+  msges        msges[]
+  userId       String
+  groupChatRef groupChatRef[]
 }
 
 enum type {
@@ -88,6 +89,15 @@ model Workspace {
   Friend        Friend[]
 }
 
+model groupChatRef {
+  id              String        @id @unique @default(cuid())
+  user            chatWorkSpace @relation(fields: [chatWorkSpaceId], references: [id], onDelete: Cascade)
+  chatWorkSpaceId String
+  groupChat       groupChat?    @relation(fields: [groupChatId], references: [id])
+  groupChatId     String?
+  unRead          Int           @default(0)
+}
+
 enum Role {
   EXTERNAL
   MEMBER
@@ -107,14 +117,14 @@ model Friend {
 }
 
 model chatWorkSpace {
-  id         String      @id() @unique @default(cuid())
-  createdAt  DateTime    @default(now())
-  role       Role
-  workspaces Workspace[]
-  groupChats groupChat[]
-  user       User?
-  Friend     Friend[]    @relation("me")
-  Wfriens    Friend[]    @relation("friend")
+  id           String         @id() @unique @default(cuid())
+  createdAt    DateTime       @default(now())
+  role         Role
+  workspaces   Workspace[]
+  user         User?
+  Friend       Friend[]       @relation("me")
+  Wfriens      Friend[]       @relation("friend")
+  groupChatRef groupChatRef[]
 }
 
 model Invites {

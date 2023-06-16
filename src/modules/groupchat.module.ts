@@ -4,8 +4,9 @@ async function addMemebToGroup(users, workspaceId, groupId, name) {
   const connectUsers = users.map((user) => ({
     id: user.id,
   }));
+
   let msg = `${name} added `;
-  if (users.length > 1) {
+  if (users.length == 1) {
     msg = msg + ` ${users[0].user.name}`;
   } else {
     users.forEach((x) => {
@@ -13,39 +14,140 @@ async function addMemebToGroup(users, workspaceId, groupId, name) {
     });
   }
   try {
+    let groupChatRefIds = [];
+    let groupChatRefs = [];
+
     let prisma = getDb();
-    let group_ = await prisma.groupChat.update({
-      where: {
-        id: groupId,
-      },
-      data: {
-        user: {
-          connect: connectUsers,
-        },
-        msges: {
-          create: {
-            content: msg,
-            type: "CMD",
+
+    await Promise.all(
+      connectUsers.map(async (x) => {
+        let refs = await prisma.groupChatRef.create({
+          data: {
+            user: {
+              connect: {
+                id: x.id,
+              },
+            },
           },
-        },
-      },
-      include: {
-        user: {
+        });
+
+        groupChatRefIds.push(refs.id);
+      })
+    );
+    let group_;
+
+    await Promise.all(
+      groupChatRefIds.map(async (x, i) => {
+        if (i == 0) {
+          let group = await prisma.groupChat.update({
+            where: {
+              id: groupId,
+            },
+            data: {
+              groupChatRef: {
+                connect: {
+                  id: x,
+                },
+              },
+
+              msges: {
+                create: {
+                  content: msg,
+                  type: "CMD",
+                },
+              },
+            },
+            include: {
+              groupChatRef: {
+                include: {
+                  user: {
+                    include: {
+                      user: true,
+                    },
+                  },
+                },
+              },
+              msges: {
+                include: {
+                  replys: true,
+                  from: true,
+                },
+              },
+            },
+          });
+          group_ = group;
+        } else {
+          let group = await prisma.groupChat.update({
+            where: {
+              id: groupId,
+            },
+            data: {
+              groupChatRef: {
+                connect: {
+                  id: x,
+                },
+              },
+            },
+            include: {
+              groupChatRef: {
+                include: {
+                  user: {
+                    include: {
+                      user: true,
+                    },
+                  },
+                },
+              },
+              msges: {
+                include: {
+                  replys: true,
+                  from: true,
+                },
+              },
+            },
+          });
+          group_ = group;
+        }
+      })
+    );
+
+    await Promise.all(
+      groupChatRefIds.map(async (x) => {
+        let refs = await prisma.groupChatRef.findUnique({
+          where: {
+            id: x,
+          },
           include: {
-            user: true,
+            groupChat: {
+              include: {
+                groupChatRef: {
+                  include: {
+                    user: {
+                      include: {
+                        user: true,
+                      },
+                    },
+                  },
+                },
+                msges: {
+                  include: {
+                    from: true,
+                    replys: true,
+                  },
+                },
+              },
+            },
+            user: {
+              include: { user: true },
+            },
           },
-        },
-        msges: {
-          include: {
-            replys: true,
-            from: true,
-          },
-        },
-      },
-    });
-    return group_;
+        });
+        groupChatRefs.push(refs);
+      })
+    );
+    return { groupChatRefs, group_ };
   } catch (error) {
-    throw error;
+    console.log(error);
   }
 }
 async function createNewGruop(workspaceId, users, user, name) {
@@ -57,16 +159,15 @@ async function createNewGruop(workspaceId, users, user, name) {
     } else {
       msg = `${user.name} joined ${name} `;
     }
-
     const connectUsers = users.map((user) => ({
       id: user.id,
     }));
-
     users.forEach((x) => {
       if (x.user.id != user.id) {
         msg = msg + ` ${x.user.name}`;
       }
     });
+    const connectRef = [];
 
     let group_ = await prisma.groupChat.create({
       data: {
@@ -76,9 +177,7 @@ async function createNewGruop(workspaceId, users, user, name) {
             id: workspaceId,
           },
         },
-        user: {
-          connect: connectUsers,
-        },
+
         admin: {
           connect: {
             id: user.id,
@@ -98,9 +197,13 @@ async function createNewGruop(workspaceId, users, user, name) {
         },
       },
       include: {
-        user: {
+        groupChatRef: {
           include: {
-            user: true,
+            user: {
+              include: {
+                user: true,
+              },
+            },
           },
         },
         msges: {
@@ -111,12 +214,74 @@ async function createNewGruop(workspaceId, users, user, name) {
         },
       },
     });
-    return group_;
+    let chatRefIds = [];
+    let chatRefs = [];
+
+    await Promise.all(
+      connectUsers.map(async (x) => {
+        let chatRef = await prisma.groupChatRef.create({
+          data: {
+            user: {
+              connect: {
+                id: x.id,
+              },
+            },
+            groupChat: {
+              connect: {
+                id: group_.id,
+              },
+            },
+          },
+        });
+
+        chatRefIds.push(chatRef.id);
+      })
+    );
+
+    await Promise.all(
+      chatRefIds.map(async (x) => {
+        let chatRef = await prisma.groupChatRef.findUnique({
+          where: {
+            id: x,
+          },
+          include: {
+            groupChat: {
+              include: {
+                msges: {
+                  include: {
+                    replys: true,
+                    from: true,
+                  },
+                },
+                groupChatRef: {
+                  include: {
+                    user: {
+                      include: {
+                        user: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+
+            user: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        });
+
+        chatRefs.push(chatRef);
+      })
+    );
+    return chatRefs;
   } catch (error) {
     throw error;
   }
 }
-async function removeUser(msg, userId, chatId) {
+async function removeUser(msg, userId, chatId, groupChatRefId) {
   try {
     let prisma = getDb();
 
@@ -131,27 +296,74 @@ async function removeUser(msg, userId, chatId) {
             content: msg,
           },
         },
-        user: {
+        groupChatRef: {
           disconnect: {
-            id: userId,
+            id: groupChatRefId,
           },
         },
       },
       include: {
         msges: true,
-        user: {
+        groupChatRef: {
           include: {
-            user: true,
+            user: {
+              include: {
+                user: true,
+              },
+            },
           },
         },
       },
     });
+    await prisma.groupChatRef.delete({
+      where: {
+        id: groupChatRefId,
+      },
+    });
     let x = gruop_.msges.at(-1);
-    let users = gruop_.user;
+    let users = gruop_.groupChatRef;
     return { x, users };
   } catch (error) {
     console.log(error);
   }
 }
+async function incrementUnRead(chatRefId) {
+  let prisma = getDb();
+  try {
+    await prisma.groupChatRef.update({
+      where: {
+        id: chatRefId,
+      },
+      data: {
+        unRead: {
+          increment: 1,
+        },
+      },
+    });
+  } catch (error) {
+    throw error;
+  }
+}
+async function setUnReadToZero(chatRefId) {
+  let prisma = getDb();
+  try {
+    await prisma.groupChatRef.update({
+      where: {
+        id: chatRefId,
+      },
+      data: {
+        unRead: 0,
+      },
+    });
+  } catch (error) {
+    throw error;
+  }
+}
 
-export { addMemebToGroup, createNewGruop, removeUser };
+export {
+  addMemebToGroup,
+  createNewGruop,
+  removeUser,
+  setUnReadToZero,
+  incrementUnRead,
+};
