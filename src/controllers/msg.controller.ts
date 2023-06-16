@@ -7,10 +7,18 @@ import {
 
 async function handleNewMsg(data, channel) {
   try {
-    let { content, type, from, chatId, url, friendId } = data;
-    console.log(data);
+    let { content, type, from, chatId, url, friendId, myChatRef } = data;
 
-    let msg = await addMsg(chatId, type, content, from, url, false, friendId);
+    let msg = await addMsg(
+      chatId,
+      type,
+      content,
+      from,
+      url,
+      false,
+      friendId,
+      myChatRef
+    );
     let { from_channel, to_channel } = channel;
     from_channel.publish("new-msg", {
       data: { msg },
@@ -69,7 +77,7 @@ async function handleEditMsgGroup(data, channel) {
     to.forEach((x) => {
       console.log(x);
 
-      editMsgGgroup(x.user.id, content, chatId, msgId);
+      editMsgGgroup(x, content, chatId, msgId);
     });
   } catch (error) {
     throw error;
@@ -82,7 +90,7 @@ async function handleDeleteMsgGroup(data, channel) {
 
     let { to } = channel;
     to.forEach((x) => {
-      deleteMsgGgroup(x.user.id, msgid, chatId);
+      deleteMsgGgroup(x, msgid, chatId);
     });
   } catch (error) {
     console.log(error);
@@ -90,12 +98,22 @@ async function handleDeleteMsgGroup(data, channel) {
 }
 async function handleNewMsgGroup(data, channel) {
   try {
-    let { content, type, from, chatId, url } = data;
+    let { content, type, from, chatId, url, myChatRef } = data;
+    console.log(myChatRef);
 
-    let msg = await addMsg(chatId, type, content, from, url, true, null);
+    let msg = await addMsg(
+      chatId,
+      type,
+      content,
+      from,
+      url,
+      true,
+      null,
+      myChatRef
+    );
     let { to } = channel;
     to.forEach((x) => {
-      newMsgGroup(x.user.id, msg, chatId);
+      newMsgGroup(x, msg, chatId);
     });
   } catch (error) {
     console.log(error);

@@ -14,6 +14,7 @@ import {
   handleNewMsgGroup,
 } from "../controllers/msg.controller";
 import { deleteMsg } from "../modules/msges.module";
+import { setUnReadToZero } from "../modules/groupchat.module";
 
 dotenv.config(); //to read env files
 
@@ -184,15 +185,30 @@ async function ably_endpoints() {
       console.log(error);
     }
   });
+  server_channel.subscribe("unread-group-chat", async (data) => {
+    try {
+      setUnReadToZero(data.data.id);
+    } catch (error) {
+      console.log(error);
+    }
+  });
 }
 
-async function newMemeberInWorkspce(userId, msg, newUser, chatId, workSpaceID) {
+async function newMemeberInWorkspce(
+  userId,
+  msg,
+  newUser,
+  chatId,
+  workSpaceID,
+  user
+) {
   let userChannel = ably_client.channels.get(userId);
   await userChannel.publish("new-memeber-workspace", {
     msg: msg,
     newUser: newUser,
     chiatId: chatId,
     workSpaceID: workSpaceID,
+    user: user,
   });
   console.log("sent");
 }
@@ -231,23 +247,24 @@ async function newMemeberAdder(userId, workspace, GroupChat) {
     console.log(error);
   }
 }
-async function removedFromGroup(userId, groupId) {
+async function removedFromGroup(userId, groupChatRefId) {
   try {
     let userChannel = ably_client.channels.get(userId);
     userChannel.publish("group-remove", {
-      groupId,
+      groupChatRefId,
     });
   } catch (error) {
     console.log(error);
   }
 }
 
-async function removeMember(userId, msg, rId, groupId) {
+async function removeMember(userId, msg, rId, groupId, groupChatRefId) {
   try {
     let userChannel = ably_client.channels.get(userId);
     userChannel.publish("group-remove-member", {
       msg,
       rId,
+      groupChatRefId: groupChatRefId,
       groupId,
     });
   } catch (error) {
