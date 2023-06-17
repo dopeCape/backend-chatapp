@@ -27,6 +27,9 @@ userRouter.post("/chelckinvite", handleChelckInvite);
 userRouter.post("/search", verifyUser, handleFindUsers);
 
 userRouter.post("/invite", verifyUser, handleAddToWorkSpace);
+userRouter.get("/test", (req, res) => {
+  res.json("it works!!! ");
+});
 
 userRouter.post("/email", verifyUser, handleEmailInvtes);
 // userRouter.get("/search/:q", verifyUser, handleSearchUser);
