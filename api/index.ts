@@ -29,8 +29,8 @@ app.use(morgan("tiny")); //to log every request to rest api
 
 ably_endpoints(); //to register alby endpoints .
 
-app.get("/test", verifyUser, (_: Request, res: Response): void => {
-  res.send("applicion works");
+app.get("/test", (_: Request, res: Response): void => {
+  res.send("app works");
 });
 
 let prisma;
