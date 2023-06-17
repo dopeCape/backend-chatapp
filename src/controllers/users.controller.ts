@@ -53,7 +53,7 @@ async function handleChelckInvite(req: Request, res: Response, next) {
   try {
     if (
       email == "tmank14319@gmail.com" ||
-      email === "timeo@mattyoungmedia.com "
+      email === "timeo@mattyoungmedia.com"
     ) {
       res.send({ msg: "ok" });
     } else {
