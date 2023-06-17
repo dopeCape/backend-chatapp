@@ -14,6 +14,8 @@ import {
   handleFindUsers,
   handleGauth,
   handleGetUserData,
+  handleNewChat,
+  handleRead,
   handleSetUserData,
 } from "../controllers/users.controller";
 
@@ -21,14 +23,12 @@ const userRouter = Router();
 
 userRouter.get("/:userId", verifyUser, handleGetUserData);
 userRouter.post("/", verifyUser, handleSetUserData);
-// userRouter.post("/chelck", handleChelckUserName);
 userRouter.post("/gauth", verifyUser, handleGauth);
 userRouter.post("/chelckinvite", handleChelckInvite);
 userRouter.post("/search", verifyUser, handleFindUsers);
-
 userRouter.post("/invite", verifyUser, handleAddToWorkSpace);
-
 userRouter.post("/email", verifyUser, handleEmailInvtes);
-// userRouter.get("/search/:q", verifyUser, handleSearchUser);
+userRouter.post("/newchat", verifyUser, handleNewChat);
+userRouter.post("/handleread", verifyUser, handleRead);
 
 export { userRouter };

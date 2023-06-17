@@ -60,13 +60,12 @@ enum type {
 }
 
 model msges {
-  id        String    @id @unique @default(uuid())
-  content   String
-  type      type
-  createdAt DateTime  @default(now())
-  updatedAt DateTime? @default(now())
-  url       String?
-
+  id          String     @id @unique @default(uuid())
+  content     String
+  type        type
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime?  @default(now())
+  url         String?
   groupchat   groupChat? @relation(fields: [groupChatId], references: [id])
   from        User?      @relation(fields: [userId], references: [id])
   userId      String?

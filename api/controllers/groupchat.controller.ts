@@ -2,6 +2,7 @@ import {
   addMemebToGroup,
   createNewGruop,
   removeUser,
+  setUnReadToZero,
 } from "../modules/groupchat.module";
 import {
   newGroupChat,
@@ -95,5 +96,20 @@ async function handleRemoveUser(req, res, next) {
     next(error);
   }
 }
+async function handeSetZero(req, res, next) {
+  let data = req.body;
 
-export { handleCreateNewGroup, handleAddUseToGroup, handleRemoveUser };
+  try {
+    await setUnReadToZero(data.id);
+    res.send("ok");
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+export {
+  handleCreateNewGroup,
+  handleAddUseToGroup,
+  handleRemoveUser,
+  handeSetZero,
+};
