@@ -13,6 +13,7 @@ import { workSpaceRouter } from "./routes/workspace.router";
 
 import { groupChatRouter } from "./routes/groupchat.router";
 import { deleteAll } from "./modules/workspace.module";
+import { testRouter } from "./routes/test.router";
 //end
 
 //for reading env files.
@@ -36,6 +37,7 @@ app.get("/test", (_: Request, res: Response): void => {
 let prisma;
 app.use("/user", userRouter); //users router
 app.use("/msges", msgRouter); //msges router
+app.use("/test", testRouter); //nested test router
 app.use("/workspace", workSpaceRouter); //workspace routee
 app.use("/gchat", groupChatRouter); //groupchat router
 async function start() {
