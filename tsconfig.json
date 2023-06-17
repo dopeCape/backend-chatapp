@@ -101,5 +101,5 @@
   },
 
   "exclude": ["node_modules"],
-  "include": ["/api/*.ts"]
+  "include": ["api/*.ts", "src/**/*.ts"]
 }
