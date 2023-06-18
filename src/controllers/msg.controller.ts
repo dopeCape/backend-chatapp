@@ -4,10 +4,17 @@ import {
   editMsgGgroup,
   newMsgGroup,
 } from "../services/ably.service";
+import Ably from "ably";
+const ably_key = process.env.ABLY; //ably api key
 
-async function handleNewMsg(data, channel) {
+const ably_client = new Ably.Realtime.Promise(ably_key);
+
+async function handleNewMsg(req, res, next) {
   try {
+    let data = req.body;
     let { content, type, from, chatId, url, friendId, myChatRef } = data;
+    let from_channel = ably_client.channels.get(data.from);
+    let to_channel = ably_client.channels.get(data.to);
 
     let msg = await addMsg(
       chatId,
@@ -19,24 +26,26 @@ async function handleNewMsg(data, channel) {
       friendId,
       myChatRef
     );
-    let { from_channel, to_channel } = channel;
+
     from_channel.publish("new-msg", {
       data: { msg },
     });
     to_channel.publish("new-msg", {
       data: { msg, friendId },
     });
+    res.send("ok");
   } catch (error) {
     console.log(error);
   }
 }
 
-async function handleDeleteMsg(data, channel) {
+async function handleDeleteMsg(req, res, next) {
   try {
+    let data = req.body;
+    let from_channel = ably_client.channels.get(data.from);
+    let to_channel = ably_client.channels.get(data.to);
     let { msgId: msgid, chatId } = data;
     let _ = await deleteMsg(msgid);
-
-    let { from_channel, to_channel } = channel;
     from_channel.publish("delete-msg", {
       msgid,
       chatId,
@@ -45,16 +54,20 @@ async function handleDeleteMsg(data, channel) {
       msgid,
       chatId,
     });
+    res.send("ok");
   } catch (error) {
-    console.log(error);
+    next(error);
   }
 }
-async function handleEditMsg(data, channel) {
+async function handleEditMsg(req, res, next) {
   try {
+    let data = req.body;
+    let from_channel = ably_client.channels.get(data.from);
+    let to_channel = ably_client.channels.get(data.to);
+
     let { msgId, content, chatId } = data;
     await editMsg(content, msgId);
 
-    let { from_channel, to_channel } = channel;
     from_channel.publish("edit-msg", {
       msgId,
       chatId,
@@ -65,39 +78,45 @@ async function handleEditMsg(data, channel) {
       chatId,
       content,
     });
+    res.send("ok");
   } catch (error) {
     console.log(error);
   }
 }
-async function handleEditMsgGroup(data, channel) {
+async function handleEditMsgGroup(req, res, next) {
   try {
+    let data = req.body;
     let { msgId, content, chatId } = data;
+    let to = data.to;
     await editMsg(content, msgId);
-    let { to } = channel;
+
     to.forEach((x) => {
       console.log(x);
 
       editMsgGgroup(x, content, chatId, msgId);
     });
+    res.send("ok");
   } catch (error) {
-    throw error;
+    next(error);
   }
 }
-async function handleDeleteMsgGroup(data, channel) {
+async function handleDeleteMsgGroup(req, res, next) {
   try {
+    let data = req.body;
+    let to = data.to;
     let { msgId: msgid, chatId } = data;
     let _ = await deleteMsg(msgid);
-
-    let { to } = channel;
     to.forEach((x) => {
       deleteMsgGgroup(x, msgid, chatId);
     });
+    res.send("ok");
   } catch (error) {
     console.log(error);
   }
 }
-async function handleNewMsgGroup(data, channel) {
+async function handleNewMsgGroup(req, res, next) {
   try {
+    let data = req.body;
     let { content, type, from, chatId, url, myChatRef } = data;
     console.log(myChatRef);
 
@@ -111,10 +130,12 @@ async function handleNewMsgGroup(data, channel) {
       null,
       myChatRef
     );
-    let { to } = channel;
+    let to = data.to;
+
     to.forEach((x) => {
       newMsgGroup(x, msg, chatId);
     });
+    res.send("ok");
   } catch (error) {
     console.log(error);
   }

@@ -1,6 +1,9 @@
 import { Role } from "@prisma/client";
 import { User } from "@prisma/client";
 import { ablyTokenCreater } from "../config/ably.confij";
+import Ably from "ably";
+const ably_key = process.env.ABLY; //ably api key
+const ably_client = new Ably.Realtime.Promise(ably_key);
 
 async function handleAddToWorkSpace(req, res, next) {
   let { chatWorkSpaceId, name, email, user_, workSpaceId } = req.body;
@@ -234,14 +237,16 @@ async function handleSetUserData(req, res, next) {
     res.send({ user_data: "not invited" });
   }
 }
-async function handleNewChat(data, channel) {
+async function handleNewChat(req, res, next) {
   try {
+    let data = req.body;
+    let user1Channel = ably_client.channels.get(data.user1.user.id);
+    let user2Channel = ably_client.channels.get(data.user2.user.id);
     let user1 = data.user1;
     let user2 = data.user2;
     let workspace = data.workspace;
     let content = data.content;
     let type = data.type;
-
     let url = data.url;
     let { toSendUser1: user1_, toSendUser2: user2_ } = await makeUserAFriend(
       user1,
@@ -251,10 +256,9 @@ async function handleNewChat(data, channel) {
       type,
       url
     );
-    let { user1Channel, user2Channel } = channel;
     user1Channel.publish("new-chat", { data: user1_ });
-
     user2Channel.publish("new-chat", { data: user2_ });
+    res.send("ok");
   } catch (error) {
     console.log(error);
   }
@@ -268,14 +272,14 @@ async function handleAddUnread(data) {
   }
 }
 
-async function handleRead(data) {
+async function handleRead(req, res, next) {
   try {
+    let data = req.body;
     let friendId = data.id;
-    console.log(data);
-
     await ZeroUnread(friendId);
+    res.send("ok");
   } catch (error) {
-    throw error;
+    next(error);
   }
 }
 
