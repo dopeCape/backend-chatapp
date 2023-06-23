@@ -3,7 +3,7 @@ import * as admin from "firebase-admin";
 import dotenv from "dotenv";
 dotenv.config();
 let firebaseKeys;
-if (process.env.NODE_ENV == "prod") {
+if (process.env.NODE_ENV == "PROD") {
   firebaseKeys = process.env.FIREBASE_KEYS_PROD;
 } else if (process.env.NODE_ENV == "DEV") {
   firebaseKeys = process.env.FIREBASE_KEYS_DEV;
