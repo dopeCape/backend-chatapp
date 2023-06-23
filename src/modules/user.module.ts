@@ -22,7 +22,7 @@ async function getInvite(email) {
 async function createInvite(email: string, role: Role, workspaceId) {
   let prisma = getDb();
   let invite = await getInvite(email);
-  let x = true;
+  console.log(email, workspaceId, role);
 
   try {
     if (invite === null) {
@@ -43,6 +43,7 @@ async function createInvite(email: string, role: Role, workspaceId) {
       return "already invited ";
     }
   } catch (error) {
+    console.log(error);
     throw error;
   }
 }
@@ -50,7 +51,6 @@ async function deleteRequest() { }
 async function createUser(user, workspaceId?, groupChatId?) {
   try {
     let prisma = getDb();
-    let uid = v4();
 
     let created_user = await prisma.user.create({
       data: {
@@ -203,6 +203,7 @@ async function createUser(user, workspaceId?, groupChatId?) {
 
 async function sendEmailInvite(email, workspaceId, role) {
   let prisma = getDb();
+  console.log(email, workspaceId, role);
   try {
     let user = await prisma.user.findFirst({
       where: {

@@ -6,37 +6,87 @@ const ably_key = process.env.ABLY; //ably api key
 const ably_client = new Ably.Realtime.Promise(ably_key);
 
 async function handleAddToWorkSpace(req, res, next) {
-  let { chatWorkSpaceId, name, email, user_, workSpaceId } = req.body;
-
-  try {
-    let { msg_, workspace_, groupChatId, groupChat_, user_, groupChatRef_ } =
-      await addUserToWorkSpace(chatWorkSpaceId, name, email, null, workSpaceId);
-    const to_send = ["chatWorkSpaceId", "groupChatId", "id", "unRead", "user"];
-    const groupCHatRef__ = Object.fromEntries(
-      Object.entries(groupChatRef_).filter(([key]) => to_send.includes(key))
-    );
-
-    workspace_.chatWorkSpace.map((x) => {
-      if (x.user.id != user_.user.id) {
-        newMemeberInWorkspce(
-          x.user.id,
+  let users = req.body.users;
+  let workSpaceId = req.body.id;
+  await Promise.all(
+    users.map(async (user) => {
+      let { chatWorkSpaceId, name, email, user_ } = user;
+      try {
+        let {
           msg_,
-          groupCHatRef__,
+          workspace_,
           groupChatId,
-          workSpaceId,
-          user_
+          groupChat_,
+          user_,
+          groupChatRef_,
+        } = await addUserToWorkSpace(
+          chatWorkSpaceId,
+          name,
+          email,
+          null,
+          workSpaceId
         );
-      } else {
-        newMemeberAdder(user_.user.id, workspace_, groupChatRef_);
+        const to_send = [
+          "chatWorkSpaceId",
+          "groupChatId",
+          "id",
+          "unRead",
+          "user",
+        ];
+        const groupCHatRef__ = Object.fromEntries(
+          Object.entries(groupChatRef_).filter(([key]) => to_send.includes(key))
+        );
+        workspace_.chatWorkSpace.map((x) => {
+          if (x.user.id != user_.user.id) {
+            newMemeberInWorkspce(
+              x.user.id,
+              msg_,
+              groupCHatRef__,
+              groupChatId,
+              workSpaceId,
+              user_
+            );
+          } else {
+            newMemeberAdder(user_.user.id, workspace_, groupChatRef_);
+          }
+        });
+        res.send({
+          msg: "added",
+        });
+      } catch (error) {
+        next(error);
       }
-    });
-
-    res.send({
-      msg: "added",
-    });
-  } catch (error) {
-    next(error);
-  }
+    })
+  );
+  // let { chatWorkSpaceId, name, email, user_, workSpaceId } = req.body;
+  // try {
+  //   let { msg_, workspace_, groupChatId, groupChat_, user_, groupChatRef_ } =
+  //     await addUserToWorkSpace(chatWorkSpaceId, name, email, null, workSpaceId);
+  //   const to_send = ["chatWorkSpaceId", "groupChatId", "id", "unRead", "user"];
+  //   const groupCHatRef__ = Object.fromEntries(
+  //     Object.entries(groupChatRef_).filter(([key]) => to_send.includes(key))
+  //   );
+  //   workspace_.chatWorkSpace.map((x) => {
+  //     if (x.user.id != user_.user.id) {
+  //       newMemeberInWorkspce(
+  //         x.user.id,
+  //         msg_,
+  //         groupCHatRef__,
+  //         groupChatId,
+  //         workSpaceId,
+  //         user_
+  //       );
+  //     } else {
+  //       newMemeberAdder(user_.user.id, workspace_, groupChatRef_);
+  //     }
+  //   });
+  //
+  //   res.send({
+  //     msg: "added",
+  //   });
+  // } catch (error) {
+  //   next(error);
+  // }
 }
 
 async function handleEmailInvtes(req, res, next) {
@@ -74,7 +124,6 @@ async function handleChelckInvite(req: Request, res: Response, next) {
 
 async function handleFindUsers(req, res, next) {
   let name = req.body.name;
-  let workspaceId = req.body.workspaceId;
   try {
     let users = await searchUser(name);
     res.send({ users });
@@ -147,6 +196,7 @@ async function handleGauth(req: Request, res: Response, next) {
 
 import {
   ZeroUnread,
+  createInvite,
   createUser,
   getInvite,
   getUserData,
@@ -282,6 +332,22 @@ async function handleRead(req, res, next) {
     next(error);
   }
 }
+async function handleSendBulkInvites(req, res, next) {
+  try {
+    let invtes = req.body.invites;
+    let workspaceId = req.body.id;
+    await Promise.all(
+      invtes.map(async (invi) => {
+        invi.role = Role.MEMBER;
+        let x = await sendEmailInvite(invi.name, workspaceId, invi.role);
+        console.log(x);
+      })
+    );
+    res.send("ok");
+  } catch (error) {
+    console.log(error);
+  }
+}
 
 export {
   handleSetUserData,
@@ -294,4 +360,5 @@ export {
   handleNewChat,
   handleRead,
   handleAddUnread,
+  handleSendBulkInvites,
 };

@@ -8,8 +8,8 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  url       = env("DATABASE_URL_DEV")
+  directUrl = env("DIRECT_URL_DEV")
 }
 
 model User {
@@ -51,12 +51,13 @@ model groupChat {
 
 enum type {
   MSG
-  LINK
+  LINKMSG
   FILE
   REPLY
   IMG
   VIDEO
   CMD
+  STICKER
 }
 
 model msges {
@@ -80,6 +81,9 @@ model msges {
 model Workspace {
   id            String          @id() @unique @default(cuid())
   name          String          @unique
+  profilePic    String?
+  topic         String?
+  description   String?
   groupChat     groupChat[]
   Chat          Chat[]
   groupChatId   String[]

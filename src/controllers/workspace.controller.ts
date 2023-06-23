@@ -5,10 +5,12 @@ async function handleCreateWorkSpace(req, res: Response, next) {
   try {
     let workspace = {
       name: req.body.name,
+      topic: req.body.topic,
+      description: req.body.description,
+      profilePic: req.body.profilePic,
     };
     let userId = req.body.userid;
     let chatWorkSpaceId = req.body.id;
-
     let { workspace_, groupChat, chatWorkSpace_ } = await createWrokspace(
       workspace,
       chatWorkSpaceId,
@@ -19,9 +21,8 @@ async function handleCreateWorkSpace(req, res: Response, next) {
     if (error.code == "P2002") {
       res.send({ workspace_: "P2002" });
     }
-
+    console.log(error);
     // next(error);
   }
 }
-
 export { handleCreateWorkSpace };

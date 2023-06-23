@@ -241,6 +241,7 @@ async function addUserToWorkSpace(
 
 async function createWrokspace(workspace, chatWorkspaceId, userId) {
   let prisma = getDb();
+  console.log(workspace, chatWorkspaceId, userId);
 
   try {
     let user = await prisma.chatWorkSpace.findFirst({
@@ -250,6 +251,9 @@ async function createWrokspace(workspace, chatWorkspaceId, userId) {
     let workspace_ = await prisma.workspace.create({
       data: {
         name: workspace.name,
+        profilePic: workspace.profilePic,
+        description: workspace.description,
+        topic: workspace.topic,
         chatWorkSpace: {
           connect: {
             id: chatWorkspaceId,
@@ -318,6 +322,7 @@ async function createWrokspace(workspace, chatWorkspaceId, userId) {
       },
     });
     // return chatWorkSpace_;
+    console.log(workspace_, groupChat, chatWorkSpace_);
     return { workspace_, groupChat, chatWorkSpace_ };
   } catch (error) {
     console.log(userId, "userid");
