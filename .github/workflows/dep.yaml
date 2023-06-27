@@ -17,8 +17,8 @@ jobs:
         run: |
           # Add your commands here to modify or create files in the root directory
           mkdir api
-          touch index.ts
-          echo "import {app} from "../src" \n export {app} " > api/index.ts
+          touch api/index.ts
+          echo "import {app} from \"../src\" \n export {app} " > api/index.ts
 
       - name: Commit and push changes
         run: |
