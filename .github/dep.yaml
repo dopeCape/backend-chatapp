@@ -1,0 +1,29 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Adding api folder in root
+        run: |
+          # Add your commands here to modify or create files in the root directory
+          mkdir api
+          touch index.ts
+          echo "import {app} from "../src" \n export {app} " > api/index.ts
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add .
+          git commit -m "Make changes via CI/CD pipeline"
+          git push

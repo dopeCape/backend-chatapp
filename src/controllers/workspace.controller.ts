@@ -1,5 +1,6 @@
 import { Response } from "express";
-import { createWrokspace } from "../modules/workspace.module";
+import { createWrokspace, upadteWorksSpace } from "../modules/workspace.module";
+import { updateWorkspace } from "../services/ably.service";
 
 async function handleCreateWorkSpace(req, res: Response, next) {
   try {
@@ -25,4 +26,26 @@ async function handleCreateWorkSpace(req, res: Response, next) {
     // next(error);
   }
 }
-export { handleCreateWorkSpace };
+async function handleUpdateWorkspace(req, res, next) {
+  try {
+    let workspace = {
+      name: req.body.name,
+      description: req.body.description,
+      topic: req.body.topic,
+      profilePic: req.body.profilePic,
+    };
+
+    console.log(workspace);
+    let worksapce_ = await upadteWorksSpace(req.body.id, workspace);
+
+    await Promise.all(
+      worksapce_.chatWorkSpace.map(async (user) => {
+        await updateWorkspace(user.user.id, worksapce_.id, workspace);
+      })
+    );
+    res.send("ok");
+  } catch (error) {
+    console.log(error);
+  }
+}
+export { handleCreateWorkSpace, handleUpdateWorkspace };

@@ -58,6 +58,7 @@ enum type {
   VIDEO
   CMD
   STICKER
+  FORWARD
 }
 
 model msges {

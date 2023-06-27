@@ -328,6 +328,32 @@ async function createWrokspace(workspace, chatWorkspaceId, userId) {
     console.log(userId, "userid");
   }
 }
+async function upadteWorksSpace(workspaceId, workspace) {
+  let prisma = getDb();
+  try {
+    let workspace_ = await prisma.workspace.update({
+      where: {
+        id: workspaceId,
+      },
+      data: {
+        name: workspace.name,
+        description: workspace.description,
+        topic: workspace.topic,
+        profilePic: workspace.profilePic,
+      },
+      include: {
+        chatWorkSpace: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+    return workspace_;
+  } catch (error) {
+    throw error;
+  }
+}
 
 async function deleteAll(req, res) {
   let prisma = getDb();
@@ -361,4 +387,4 @@ async function deleteAll(req, res) {
   }
 }
 
-export { createWrokspace, deleteAll, addUserToWorkSpace };
+export { createWrokspace, deleteAll, addUserToWorkSpace, upadteWorksSpace };
