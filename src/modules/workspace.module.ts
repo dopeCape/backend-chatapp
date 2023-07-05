@@ -277,6 +277,7 @@ async function createWrokspace(workspace, chatWorkspaceId, userId) {
       },
     });
     let visbiltiy = GroupChatvisibility.PUBLIC;
+
     let ty = GroupupType.CHANNEL;
     let groupChat = await prisma.groupChatRef.create({
       data: {
