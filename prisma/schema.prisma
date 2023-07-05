@@ -12,6 +12,23 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+model HistoryEntryes {
+  id        String      @unique @default(cuid())
+  content   String
+  type      GroupupType
+  History   History?    @relation(fields: [historyId], references: [id])
+  historyId String?
+}
+
+model History {
+  id              String           @unique @default(cuid())
+  user            chatWorkSpace    @relation(fields: [chatWorkSpaceId], references: [id])
+  workspace       Workspace        @relation(fields: [workspaceId], references: [id])
+  workspaceId     String
+  entrys          HistoryEntryes[]
+  chatWorkSpaceId String
+}
+
 model User {
   id              String        @unique() @default(cuid())
   email           String        @unique()
@@ -36,14 +53,15 @@ model Chat {
 }
 
 model groupChat {
-  name        String
-  id          String    @id @unique @default(cuid())
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  workspaceId String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime? @updatedAt
-
-  admin        User           @relation(fields: [userId], references: [id])
+  name         String
+  id           String               @id @unique @default(cuid())
+  workspace    Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId  String
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime?            @updatedAt
+  type         GroupupType?
+  visibility   GroupChatvisibility?
+  admin        User                 @relation(fields: [userId], references: [id])
   msges        msges[]
   userId       String
   groupChatRef groupChatRef[]
@@ -53,7 +71,6 @@ enum type {
   MSG
   LINKMSG
   FILE
-  REPLY
   IMG
   VIDEO
   CMD
@@ -64,6 +81,7 @@ enum type {
 model msges {
   id          String     @id @unique @default(uuid())
   content     String
+  isReply     Boolean?   @default(false)
   type        type
   createdAt   DateTime   @default(now())
   updatedAt   DateTime?  @default(now())
@@ -74,7 +92,7 @@ model msges {
   chatId      String?
   groupChatId String?
   replys      msges[]    @relation("replay")
-  msges       msges?     @relation("replay", fields: [msgesId], references: [id])
+  reptedTO    msges?     @relation("replay", fields: [msgesId], references: [id])
   msgesId     String?
   Chat        Chat?      @relation(fields: [chatId], references: [id])
 }
@@ -91,10 +109,12 @@ model Workspace {
   chatWorkSpace chatWorkSpace[]
   Invites       Invites[]
   Friend        Friend[]
+  History       History[]
 }
 
 model groupChatRef {
   id              String        @id @unique @default(cuid())
+  muted           Boolean       @default(false)
   user            chatWorkSpace @relation(fields: [chatWorkSpaceId], references: [id], onDelete: Cascade)
   chatWorkSpaceId String
   groupChat       groupChat?    @relation(fields: [groupChatId], references: [id])
@@ -102,14 +122,25 @@ model groupChatRef {
   unRead          Int           @default(0)
 }
 
+enum GroupChatvisibility {
+  PUBLIC
+  PRIVATE
+}
+
 enum Role {
   EXTERNAL
   MEMBER
 }
 
+enum GroupupType {
+  GROUP
+  CHANNEL
+}
+
 model Friend {
   id              String         @id @unique() @default(cuid())
   chat            Chat           @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  muted           Boolean        @default(false)
   chatId          String
   unRead          Int            @default(0)
   workspace       Workspace      @relation(fields: [workspaceId], references: [id])
@@ -129,6 +160,7 @@ model chatWorkSpace {
   Friend       Friend[]       @relation("me")
   Wfriens      Friend[]       @relation("friend")
   groupChatRef groupChatRef[]
+  History      History[]
 }
 
 model Invites {

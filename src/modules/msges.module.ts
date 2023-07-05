@@ -10,7 +10,9 @@ async function addMsg(
   url,
   group,
   friendId,
-  myChatRef
+  myChatRef,
+  replyedTo,
+  isReply
 ) {
   if (url == undefined) {
     url = "";
@@ -18,52 +20,136 @@ async function addMsg(
   try {
     let prisma = getDb();
     if (!group) {
-      let _ = await prisma.msges.create({
-        data: {
-          type: type,
-          Chat: {
-            connect: { id: chatId },
-          },
-          content: content,
-          url: url,
+      let _;
+      if (isReply) {
+        _ = await prisma.msges.create({
+          data: {
+            type: type,
+            isReply: isReply,
+            reptedTO: {
+              connect: {
+                id: replyedTo,
+              },
+            },
+            Chat: {
+              connect: { id: chatId },
+            },
+            content: content,
+            url: url,
 
-          from: {
-            connect: {
-              id: from,
+            from: {
+              connect: {
+                id: from,
+              },
             },
           },
-        },
-        include: {
-          replys: true,
-          from: true,
-        },
-      });
-      incrementUnread(friendId);
+          include: {
+            reptedTO: {
+              include: {
+                from: true,
+              },
+            },
+            replys: true,
+            from: true,
+            Chat: true,
+          },
+        });
+      } else {
+        _ = await prisma.msges.create({
+          data: {
+            type: type,
+            isReply: isReply,
+            Chat: {
+              connect: { id: chatId },
+            },
+            content: content,
+            url: url,
 
+            from: {
+              connect: {
+                id: from,
+              },
+            },
+          },
+          include: {
+            replys: true,
+            reptedTO: {
+              include: {
+                from: true,
+              },
+            },
+            from: true,
+            Chat: true,
+          },
+        });
+      }
+      incrementUnread(friendId);
       let msg = _;
 
       return { msg };
     } else {
-      let _ = await prisma.msges.create({
-        data: {
-          type: type,
-          groupchat: {
-            connect: { id: chatId },
-          },
-          content: content,
-          url: url,
+      let _;
+      if (replyedTo) {
+        _ = await prisma.msges.create({
+          data: {
+            type: type,
+            reptedTO: {
+              connect: {
+                id: replyedTo,
+              },
+            },
+            isReply: isReply,
+            groupchat: {
+              connect: { id: chatId },
+            },
+            content: content,
+            url: url,
 
-          from: {
-            connect: {
-              id: from,
+            from: {
+              connect: {
+                id: from,
+              },
             },
           },
-        },
-        include: {
-          replys: true,
-          from: true,
-        },
-      });
+          include: {
+            reptedTO: {
+              include: {
+                from: true,
+              },
+            },
+            replys: true,
+            from: true,
+            Chat: true,
+          },
+        });
+      } else {
+        _ = await prisma.msges.create({
+          data: {
+            type: type,
+            groupchat: {
+              connect: { id: chatId },
+            },
+            content: content,
+            url: url,
+
+            from: {
+              connect: {
+                id: from,
+              },
+            },
+          },
+          include: {
+            reptedTO: {
+              include: {
+                from: true,
+              },
+            },
+            replys: true,
+            from: true,
+            Chat: true,
+          },
+        });
+      }
 
       let msg = _;
       let groupChatRefs = await prisma.groupChat.findUnique({
@@ -83,13 +169,14 @@ async function addMsg(
         },
       });
 
-      console.log(myChatRef);
-      groupChatRefs.groupChatRef.forEach((x) => {
+      let y;
+      groupChatRefs.groupChatRef.forEach(async (x) => {
         if (x.id !== myChatRef) {
-          incrementUnRead(x.id);
+          y = x.id;
+          await incrementUnRead(x.id);
         }
       });
-      return { msg };
+      return { msg, y };
     }
   } catch (error) {
     console.log(error);

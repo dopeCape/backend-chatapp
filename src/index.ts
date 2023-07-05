@@ -13,6 +13,7 @@ import { workSpaceRouter } from "./routes/workspace.router";
 import { groupChatRouter } from "./routes/groupchat.router";
 import { deleteAll } from "./modules/workspace.module";
 import { testRouter } from "./routes/test.router";
+import { PrismaClient } from "@prisma/client";
 //end
 
 //for reading env files.
@@ -26,12 +27,10 @@ app.use(Express.json());
 app.get("/del", deleteAll);
 app.use(cors()); // to avoid cors errors
 app.use(morgan("tiny")); //to log every request to rest api
-
 app.get("/test", (_: Request, res: Response): void => {
   res.send("app works");
 });
-
-let prisma;
+let prisma: PrismaClient;
 app.use("/user", userRouter); //users router
 app.use("/msges", msgRouter); //msges router
 app.use("/test", testRouter); //nested test router
@@ -45,7 +44,7 @@ async function start() {
     console.error(e);
   }
   app.listen(port, () => {
-    console.log("app listning on port:", port, "/n wtf");
+    console.log("app listning on port:", port);
   });
 }
 

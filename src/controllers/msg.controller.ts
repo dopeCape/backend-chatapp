@@ -12,11 +12,20 @@ const ably_client = new Ably.Realtime.Promise(ably_key);
 async function handleNewMsg(req, res, next) {
   try {
     let data = req.body;
-    let { content, type, from, chatId, url, friendId, myChatRef } = data;
+    let {
+      content,
+      type,
+      from,
+      chatId,
+      url,
+      friendId,
+      myChatRef,
+      isReply,
+      replyedTo,
+    } = data;
     let from_channel = ably_client.channels.get(data.from);
     let to_channel = ably_client.channels.get(data.to);
-
-    let msg = await addMsg(
+    let { msg, y } = await addMsg(
       chatId,
       type,
       content,
@@ -24,14 +33,18 @@ async function handleNewMsg(req, res, next) {
       url,
       false,
       friendId,
-      myChatRef
+      myChatRef,
+      replyedTo,
+      isReply
     );
-
+    let from_id = data.from;
+    let workspaceId = msg.Chat.workspaceId;
+    delete msg.Chat;
     from_channel.publish("new-msg", {
       data: { msg },
     });
     to_channel.publish("new-msg", {
-      data: { msg, friendId },
+      data: { msg, friendId, from: from_id, workspaceId },
     });
     res.send("ok");
   } catch (error) {
@@ -114,12 +127,18 @@ async function handleDeleteMsgGroup(req, res, next) {
     console.log(error);
   }
 }
+async function handleNewReply(req, res, next) {
+  try {
+  } catch (error) {
+    console.log(error);
+  }
+}
 async function handleNewMsgGroup(req, res, next) {
   try {
     let data = req.body;
-    let { content, type, from, chatId, url, myChatRef } = data;
+    let { content, type, from, chatId, url, myChatRef, isReply, replyedTo } =
+      data;
     console.log(myChatRef);
-
     let msg = await addMsg(
       chatId,
       type,
@@ -128,7 +147,9 @@ async function handleNewMsgGroup(req, res, next) {
       url,
       true,
       null,
-      myChatRef
+      myChatRef,
+      replyedTo,
+      isReply
     );
     let to = data.to;
 

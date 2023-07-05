@@ -138,7 +138,11 @@ async function addMemebToGroup(users, workspaceId, groupId, name) {
               },
             },
             user: {
-              include: { user: true },
+              include: {
+                user: true,
+
+                History: true,
+              },
             },
           },
         });
@@ -150,7 +154,14 @@ async function addMemebToGroup(users, workspaceId, groupId, name) {
     console.log(error);
   }
 }
-async function createNewGruop(workspaceId, users, user, name) {
+async function createNewGruop(
+  workspaceId,
+  users,
+  user,
+  name,
+  type,
+  visibility
+) {
   try {
     let prisma = getDb();
     let msg;
@@ -168,10 +179,11 @@ async function createNewGruop(workspaceId, users, user, name) {
       }
     });
     const connectRef = [];
-
     let group_ = await prisma.groupChat.create({
       data: {
         name: name,
+        type: type,
+        visibility: visibility,
         workspace: {
           connect: {
             id: workspaceId,
@@ -197,6 +209,7 @@ async function createNewGruop(workspaceId, users, user, name) {
         },
       },
       include: {
+        admin: true,
         groupChatRef: {
           include: {
             user: {
@@ -216,7 +229,6 @@ async function createNewGruop(workspaceId, users, user, name) {
     });
     let chatRefIds = [];
     let chatRefs = [];
-
     await Promise.all(
       connectUsers.map(async (x) => {
         let chatRef = await prisma.groupChatRef.create({
@@ -247,6 +259,7 @@ async function createNewGruop(workspaceId, users, user, name) {
           include: {
             groupChat: {
               include: {
+                admin: true,
                 msges: {
                   include: {
                     replys: true,
@@ -359,11 +372,46 @@ async function setUnReadToZero(chatRefId) {
     throw error;
   }
 }
-
+async function delteGroup(groupChatId, groupChatRefs) {
+  try {
+    let prisma = getDb();
+    await prisma.groupChatRef.deleteMany({
+      where: {
+        id: {
+          in: groupChatRefs,
+        },
+      },
+    });
+    await prisma.groupChat.delete({
+      where: {
+        id: groupChatId,
+      },
+    });
+  } catch (error) {
+    throw error;
+  }
+}
+async function setMute(groupChatRefid, mute) {
+  try {
+    let prisma = getDb();
+    await prisma.groupChatRef.update({
+      where: {
+        id: groupChatRefid,
+      },
+      data: {
+        muted: mute,
+      },
+    });
+  } catch (error) {
+    throw error;
+  }
+}
 export {
   addMemebToGroup,
   createNewGruop,
   removeUser,
   setUnReadToZero,
   incrementUnRead,
+  delteGroup,
+  setMute,
 };

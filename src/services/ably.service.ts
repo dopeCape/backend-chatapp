@@ -1,4 +1,5 @@
 import Ably from "ably";
+import { log } from "console";
 import dotenv from "dotenv";
 
 dotenv.config(); //to read env files
@@ -128,6 +129,16 @@ async function updateWorkspace(userId, workSpaceId, workspace) {
     console.log(error);
   }
 }
+async function delelteGroupSender(userId, groupChatId) {
+  try {
+    let userChannel = ably_client.channels.get(userId);
+    userChannel.publish("group-delete", {
+      groupChatId,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+}
 export {
   newMemeberInWorkspce,
   newMemeberAdder,
@@ -139,4 +150,5 @@ export {
   editMsgGgroup,
   newMsgGroup,
   updateWorkspace,
+  delelteGroupSender,
 };

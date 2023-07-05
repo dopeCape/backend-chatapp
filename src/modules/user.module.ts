@@ -67,7 +67,15 @@ async function createUser(user, workspaceId?, groupChatId?) {
         chatWorkSpaces: {
           include: {
             user: true,
-            workspaces: true,
+            workspaces: {
+              include: {
+                History: {
+                  include: {
+                    entrys: true,
+                  },
+                },
+              },
+            },
             Friend: {
               include: {
                 friend: {
@@ -307,6 +315,12 @@ async function getUserData(fireBaseid) {
       include: {
         chatWorkSpaces: {
           include: {
+            History: {
+              include: {
+                entrys: true,
+              },
+            },
+
             user: true,
             workspaces: {
               include: {
@@ -350,6 +364,11 @@ async function getUserData(fireBaseid) {
                       include: {
                         from: true,
                         replys: true,
+                        reptedTO: {
+                          include: {
+                            from: true,
+                          },
+                        },
                       },
                     },
                   },
@@ -361,8 +380,14 @@ async function getUserData(fireBaseid) {
               include: {
                 groupChat: {
                   include: {
+                    admin: true,
                     msges: {
                       include: {
+                        reptedTO: {
+                          include: {
+                            from: true,
+                          },
+                        },
                         from: true,
                         replys: true,
                       },
@@ -401,9 +426,8 @@ async function makeUserAFriend(
   if (url == undefined) {
     url = "";
   }
+  const chatId = v4();
   try {
-    console.log("wtf");
-
     let user1_ = await prisma.chatWorkSpace.update({
       where: {
         id: user1.id,
@@ -418,6 +442,7 @@ async function makeUserAFriend(
             },
             chat: {
               create: {
+                id: chatId,
                 workspace: {
                   connect: {
                     id: workspace,
@@ -518,7 +543,7 @@ async function makeUserAFriend(
               },
             },
 
-            chat: { connect: { id: user1_msg.Friend.at(-1).chatId } },
+            chat: { connect: { id: chatId } },
             friend: { connect: { id: user1_.id } },
           },
         },
@@ -632,11 +657,20 @@ async function makeUserAFriend(
         },
       },
     });
-
-    let toSendUser1 = user1_msg.Friend.at(-1);
-
-    let toSendUser2 = user2_msg.Friend.at(-1);
-
+    let toSendUser1;
+    let toSendUser2;
+    user1_msg.Friend.forEach((x) => {
+      console.log(x);
+      if (x.chatId === chatId) {
+        toSendUser1 = x;
+      }
+    });
+    user2_msg.Friend.find((x) => {
+      console.log(x);
+      if (x.chatId === chatId) {
+        toSendUser2 = x;
+      }
+    });
     return { toSendUser1, toSendUser2 };
   } catch (error) {
     console.log(error);
@@ -671,6 +705,21 @@ async function ZeroUnread(friednId) {
     throw error;
   }
 }
+async function setMute(friendId: string, mute: boolean) {
+  try {
+    let prisma = getDb();
+    await prisma.friend.update({
+      where: {
+        id: friendId,
+      },
+      data: {
+        muted: mute,
+      },
+    });
+  } catch (error) {
+    throw error;
+  }
+}
 export {
   createUser,
   getUserData,
@@ -681,4 +730,5 @@ export {
   makeUserAFriend,
   incrementUnread,
   ZeroUnread,
+  setMute,
 };

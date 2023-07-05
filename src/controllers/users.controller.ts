@@ -204,6 +204,7 @@ import {
   makeUserAFriend,
   searchUser,
   sendEmailInvite,
+  setMute,
 } from "../modules/user.module";
 import { Request, Response } from "express";
 import { addUserToWorkSpace } from "../modules/workspace.module";
@@ -260,9 +261,12 @@ async function handleSetUserData(req, res, next) {
           groupChatId,
           groupChatRef_,
         } = await createUser(user_, "x", "x");
+        let groupChatRefToSend = groupChatRef_;
+        delete groupChatRefToSend.groupChat;
         await Promise.all(
           workspace_.chatWorkSpace.map(async (x) => {
             if (x.user.id != user__.user.id) {
+              console.log(groupChatRef_);
               await newMemeberInWorkspce(
                 x.user.id,
                 msg_,
@@ -306,6 +310,14 @@ async function handleNewChat(req, res, next) {
       type,
       url
     );
+    console.log(user1_, user2_);
+
+    // let c1id = user1_.chat.workspaceId;
+    // let c2id = user2_.chat.workspaceId;
+    // delete user1_.chat;
+    // delete user2_.chat;
+    // let user1__ = { ...user1_, chat: { workspaceId: c1id } };
+    // let user2__ = { ...user2_, chat: { workspaceId: c2id } };
     user1Channel.publish("new-chat", { data: user1_ });
     user2Channel.publish("new-chat", { data: user2_ });
     res.send("ok");
@@ -348,6 +360,17 @@ async function handleSendBulkInvites(req, res, next) {
     console.log(error);
   }
 }
+async function handleMute(req, res, next) {
+  try {
+    let { friendId, mute } = req.body;
+    console.log(mute);
+    await setMute(friendId, mute);
+    res.send("ok");
+    res.status(200);
+  } catch (error) {
+    console.log(error);
+  }
+}
 
 export {
   handleSetUserData,
@@ -361,4 +384,5 @@ export {
   handleRead,
   handleAddUnread,
   handleSendBulkInvites,
+  handleMute,
 };
