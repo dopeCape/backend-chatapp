@@ -414,18 +414,8 @@ async function getUserData(fireBaseid) {
     throw error;
   }
 }
-async function makeUserAFriend(
-  user1,
-  user2,
-  workspace: string,
-  content: string,
-  type: type,
-  url: string
-) {
+async function makeUserAFriend(user1, user2, workspace: string) {
   let prisma = getDb();
-  if (url == undefined) {
-    url = "";
-  }
   const chatId = v4();
   try {
     let user1_ = await prisma.chatWorkSpace.update({
@@ -453,17 +443,6 @@ async function makeUserAFriend(
                     {
                       type: "CMD",
                       content: "Start of the converstion",
-                    },
-                    {
-                      content: content,
-                      type: type,
-
-                      url: url,
-                      from: {
-                        connect: {
-                          id: user1.user.id,
-                        },
-                      },
                     },
                   ],
                 },

@@ -12,7 +12,8 @@ async function addMsg(
   friendId,
   myChatRef,
   replyedTo,
-  isReply
+  isReply,
+  forwarded
 ) {
   if (url == undefined) {
     url = "";
@@ -59,12 +60,12 @@ async function addMsg(
           data: {
             type: type,
             isReply: isReply,
+            forwarded: forwarded,
             Chat: {
               connect: { id: chatId },
             },
             content: content,
             url: url,
-
             from: {
               connect: {
                 id: from,
@@ -126,6 +127,7 @@ async function addMsg(
         _ = await prisma.msges.create({
           data: {
             type: type,
+            forwarded: forwarded,
             groupchat: {
               connect: { id: chatId },
             },

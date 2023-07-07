@@ -95,6 +95,7 @@ model msges {
   reptedTO    msges?     @relation("replay", fields: [msgesId], references: [id])
   msgesId     String?
   Chat        Chat?      @relation(fields: [chatId], references: [id])
+  forwarded   Boolean?
 }
 
 model Workspace {

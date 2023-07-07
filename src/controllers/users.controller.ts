@@ -266,7 +266,6 @@ async function handleSetUserData(req, res, next) {
         await Promise.all(
           workspace_.chatWorkSpace.map(async (x) => {
             if (x.user.id != user__.user.id) {
-              console.log(groupChatRef_);
               await newMemeberInWorkspce(
                 x.user.id,
                 msg_,
@@ -299,16 +298,10 @@ async function handleNewChat(req, res, next) {
     let user1 = data.user1;
     let user2 = data.user2;
     let workspace = data.workspace;
-    let content = data.content;
-    let type = data.type;
-    let url = data.url;
     let { toSendUser1: user1_, toSendUser2: user2_ } = await makeUserAFriend(
       user1,
       user2,
-      workspace,
-      content,
-      type,
-      url
+      workspace
     );
     console.log(user1_, user2_);
 
@@ -363,7 +356,6 @@ async function handleSendBulkInvites(req, res, next) {
 async function handleMute(req, res, next) {
   try {
     let { friendId, mute } = req.body;
-    console.log(mute);
     await setMute(friendId, mute);
     res.send("ok");
     res.status(200);

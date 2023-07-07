@@ -22,6 +22,7 @@ async function handleNewMsg(req, res, next) {
       myChatRef,
       isReply,
       replyedTo,
+      forwarded,
     } = data;
     let from_channel = ably_client.channels.get(data.from);
     let to_channel = ably_client.channels.get(data.to);
@@ -35,7 +36,8 @@ async function handleNewMsg(req, res, next) {
       friendId,
       myChatRef,
       replyedTo,
-      isReply
+      isReply,
+      forwarded
     );
     let from_id = data.from;
     let workspaceId = msg.Chat.workspaceId;
@@ -136,9 +138,17 @@ async function handleNewReply(req, res, next) {
 async function handleNewMsgGroup(req, res, next) {
   try {
     let data = req.body;
-    let { content, type, from, chatId, url, myChatRef, isReply, replyedTo } =
-      data;
-    console.log(myChatRef);
+    let {
+      content,
+      type,
+      from,
+      chatId,
+      url,
+      myChatRef,
+      isReply,
+      replyedTo,
+      forwarded,
+    } = data;
     let msg = await addMsg(
       chatId,
       type,
@@ -149,7 +159,8 @@ async function handleNewMsgGroup(req, res, next) {
       null,
       myChatRef,
       replyedTo,
-      isReply
+      isReply,
+      forwarded
     );
     let to = data.to;
 
