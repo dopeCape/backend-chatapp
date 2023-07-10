@@ -53,8 +53,6 @@ async function newMemeberAdder(userId, workspace, GroupChat) {
       workspace,
       GroupChat,
     });
-
-    console.log("sent");
   } catch (error) {
     console.log(error);
   }
@@ -139,6 +137,36 @@ async function delelteGroupSender(userId, groupChatId) {
     console.log(error);
   }
 }
+async function removeMemberFromWorkspace(
+  userId,
+  id,
+  friendId,
+  groupChats,
+  workspaceId
+) {
+  try {
+    let userChannel = ably_client.channels.get(userId);
+    userChannel.publish("workspace-remove", {
+      id,
+      friendId,
+      workspaceId,
+      groupChats,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+}
+async function deleteWorkspace(userId, workspaceId) {
+  try {
+    let userChannel = ably_client.channels.get(userId);
+    userChannel.publish("workspace-delete", {
+      userId,
+      workspaceId,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+}
 export {
   newMemeberInWorkspce,
   newMemeberAdder,
@@ -151,4 +179,6 @@ export {
   newMsgGroup,
   updateWorkspace,
   delelteGroupSender,
+  removeMemberFromWorkspace,
+  deleteWorkspace,
 };

@@ -382,31 +382,22 @@ async function upadteWorksSpace(workspaceId, workspace) {
     throw error;
   }
 }
-
 async function deleteAll(req, res) {
   let prisma = getDb();
   try {
     // Delete all rows in the Friend table
     await prisma.chat.deleteMany({});
-
     // Delete all rows in the Friend table
     await prisma.friend.deleteMany({});
-
     // Delete all rows in the msges table
     await prisma.msges.deleteMany({});
-
     // Delete all rows in the groupChat table
     await prisma.groupChat.deleteMany({});
-
     // Delete all rows in the chatWorkSpace table
     await prisma.chatWorkSpace.deleteMany({});
-
     // Delete all rows in the User table
     await prisma.user.deleteMany({});
-
-    // Delete all rows in the Invites table
     await prisma.invites.deleteMany({});
-
     // Delete all rows in the Workspace table
     await prisma.workspace.deleteMany({});
     res.send("dono");
@@ -414,5 +405,44 @@ async function deleteAll(req, res) {
     console.log(error);
   }
 }
-
-export { createWrokspace, deleteAll, addUserToWorkSpace, upadteWorksSpace };
+async function removeUserFromWorkSpace(workspace, userId) {
+  try {
+    let prisma = getDb();
+    let user = await prisma.user.findUnique({
+      where: {
+        chatWorkSpaceId: userId,
+      },
+    });
+    let workspace_ = await prisma.workspace.update({
+      where: {
+        id: workspace,
+      },
+      data: {
+        chatWorkSpace: {
+          disconnect: {
+            id: userId,
+          },
+        },
+      },
+      include: {
+        chatWorkSpace: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+    let users = workspace_.chatWorkSpace;
+    let id = user.id;
+    return { users, id };
+  } catch (error) {
+    throw error;
+  }
+}
+export {
+  createWrokspace,
+  deleteAll,
+  addUserToWorkSpace,
+  upadteWorksSpace,
+  removeUserFromWorkSpace,
+};

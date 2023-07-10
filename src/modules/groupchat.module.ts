@@ -58,6 +58,7 @@ async function addMemebToGroup(users, workspaceId, groupId, name) {
               },
             },
             include: {
+              admin: true,
               groupChatRef: {
                 include: {
                   user: {
@@ -120,6 +121,7 @@ async function addMemebToGroup(users, workspaceId, groupId, name) {
           include: {
             groupChat: {
               include: {
+                admin: true,
                 groupChatRef: {
                   include: {
                     user: {
@@ -406,6 +408,115 @@ async function setMute(groupChatRefid, mute) {
     throw error;
   }
 }
+
+async function removeAdminFromGroup(userId, groupId) {
+  try {
+    let prisma = getDb();
+    let usersInAGroup = await prisma.groupChat.findFirst({
+      where: {
+        id: groupId,
+      },
+      include: {
+        admin: true,
+        groupChatRef: {
+          include: {
+            user: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    if (usersInAGroup.groupChatRef.length > 0) {
+      await prisma.groupChat.update({
+        where: { id: groupId },
+        data: {
+          admin: {
+            connect: { id: usersInAGroup.groupChatRef[0].user.user.id },
+          },
+        },
+      });
+      return usersInAGroup.groupChatRef[0].user.user;
+    } else {
+      await prisma.groupChat.delete({
+        where: {
+          id: groupId,
+        },
+      });
+    }
+  } catch (error) {
+    throw error;
+  }
+}
+async function delteFromAllGroup(userId, workspaceId) {
+  try {
+    let prisma = getDb();
+    let groupChatRefs_ = await prisma.groupChatRef.findMany({
+      where: {
+        chatWorkSpaceId: userId,
+        groupChat: {
+          workspaceId: workspaceId,
+        },
+      },
+      include: {
+        user: {
+          include: {
+            user: true,
+          },
+        },
+        groupChat: {
+          include: {
+            admin: true,
+            groupChatRef: {
+              include: {
+                user: {
+                  include: {
+                    user: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    let groupChatMapedToUserIds = [];
+
+    await Promise.all(
+      groupChatRefs_.map(async (gr) => {
+        let groupChatId = gr.groupChat.id;
+        let users = gr.groupChat.groupChatRef.map((x) => x.user.id);
+
+        let { x } = await removeUser(
+          `${gr.user.user.name} left ${gr.groupChat.name}`,
+          userId,
+          gr.groupChatId,
+          gr.id
+        );
+        let groupChatMap = {
+          users: users,
+          groupChatId,
+          admin: null,
+          groupChatRefId: gr.id,
+          msg: x,
+        };
+
+        if (gr.groupChat.admin.chatWorkSpaceId === userId) {
+          let admin = await removeAdminFromGroup(userId, gr.groupChatId);
+          groupChatMap.admin = admin;
+        }
+
+        console.log(groupChatMap, "workspace module");
+        groupChatMapedToUserIds.push(groupChatMap);
+      })
+    );
+    return groupChatMapedToUserIds;
+  } catch (error) {
+    throw error;
+  }
+}
 export {
   addMemebToGroup,
   createNewGruop,
@@ -414,4 +525,6 @@ export {
   incrementUnRead,
   delteGroup,
   setMute,
+  removeAdminFromGroup,
+  delteFromAllGroup,
 };

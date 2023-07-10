@@ -699,6 +699,64 @@ async function setMute(friendId: string, mute: boolean) {
     throw error;
   }
 }
+async function delteFriend(friends, chatId) {
+  try {
+    let prisma = getDb();
+    await prisma.friend.delete({
+      where: {
+        id: friends[0].id,
+      },
+    });
+    await prisma.friend.delete({
+      where: {
+        id: friends[1].id,
+      },
+    });
+    await prisma.chat.delete({ where: { id: chatId } });
+  } catch (error) {
+    throw error;
+  }
+}
+async function deleteAllFriends(userId, workspaceId) {
+  try {
+    let prisma = getDb();
+    let friends_ = await prisma.friend.findMany({
+      where: {
+        workspaceId: workspaceId,
+        chatWorkSpaceId: userId,
+      },
+      include: {
+        chat: {
+          include: {
+            Friend: {
+              include: {
+                chatWorkSpace: {
+                  include: {
+                    user: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    let friendsToRetrun = [];
+    await Promise.all(
+      friends_.map(async (fr) => {
+        let fr_ = fr.chat.Friend.filter((fr___) => {
+          return fr___.chatWorkSpaceId != userId;
+        });
+        friendsToRetrun.push(fr_[0]);
+        await delteFriend(fr.chat.Friend, fr.chatId);
+      })
+    );
+
+    return friendsToRetrun;
+  } catch (error) {
+    throw error;
+  }
+}
 export {
   createUser,
   getUserData,
@@ -710,4 +768,6 @@ export {
   incrementUnread,
   ZeroUnread,
   setMute,
+  delteFriend,
+  deleteAllFriends,
 };
