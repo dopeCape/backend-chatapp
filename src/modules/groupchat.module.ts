@@ -1,3 +1,4 @@
+import { GroupupType } from "@prisma/client";
 import { getDb } from "../config/db.config";
 
 async function addMemebToGroup(users, workspaceId, groupId, name) {
@@ -5,19 +6,40 @@ async function addMemebToGroup(users, workspaceId, groupId, name) {
     id: user.id,
   }));
 
+  let prisma = getDb();
+  let group__ = await prisma.groupChat.findUnique({
+    where: {
+      id: groupId,
+    },
+    include: {
+      groupChatRef: {
+        include: {
+          user: {
+            include: {
+              user: true,
+              History: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
   let msg = `${name} added `;
+  let historyMsg = "";
   if (users.length == 1) {
     msg = msg + ` ${users[0].user.name}`;
+    historyMsg = historyMsg + `${users[0].user.name},`;
   } else {
     users.forEach((x) => {
       msg = msg + ` ${x.user.name} `;
+      historyMsg = historyMsg + `${x.user.name} `;
     });
   }
+  historyMsg = historyMsg + ` Joined ${group__.name}`;
   try {
     let groupChatRefIds = [];
     let groupChatRefs = [];
-
-    let prisma = getDb();
 
     await Promise.all(
       connectUsers.map(async (x) => {
@@ -111,7 +133,6 @@ async function addMemebToGroup(users, workspaceId, groupId, name) {
         }
       })
     );
-
     await Promise.all(
       groupChatRefIds.map(async (x) => {
         let refs = await prisma.groupChatRef.findUnique({
@@ -142,7 +163,6 @@ async function addMemebToGroup(users, workspaceId, groupId, name) {
             user: {
               include: {
                 user: true,
-
                 History: true,
               },
             },
@@ -151,7 +171,41 @@ async function addMemebToGroup(users, workspaceId, groupId, name) {
         groupChatRefs.push(refs);
       })
     );
-    return { groupChatRefs, group_ };
+    let historyEntriesToSend = [];
+
+    await Promise.all(
+      group__.groupChatRef.map(async (gr) => {
+        let hId = gr.user.History.filter((x) => {
+          return x.workspaceId === workspaceId;
+        });
+        let histroy_entry = await prisma.historyEntryes.create({
+          data: {
+            content: historyMsg,
+            type: group__.type,
+          },
+        });
+
+        let history = await prisma.history.update({
+          where: {
+            id: hId[0].id,
+          },
+          data: {
+            entrys: {
+              connect: {
+                id: histroy_entry.id,
+              },
+            },
+          },
+        });
+        historyEntriesToSend.push({
+          history: histroy_entry,
+          userId: gr.user.user.id,
+          historyId: history.id,
+        });
+      })
+    );
+
+    return { groupChatRefs, group_, historyEntriesToSend };
   } catch (error) {
     console.log(error);
   }
@@ -296,9 +350,34 @@ async function createNewGruop(
     throw error;
   }
 }
-async function removeUser(msg, userId, chatId, groupChatRefId) {
+async function removeUser(
+  msg,
+  userId,
+  chatId,
+  groupChatRefId,
+  name,
+  groupName
+) {
   try {
     let prisma = getDb();
+    let historyMsg = `${name} left ${groupName}`;
+    let group_ = await prisma.groupChat.findUnique({
+      where: {
+        id: chatId,
+      },
+      include: {
+        groupChatRef: {
+          include: {
+            user: {
+              include: {
+                user: true,
+                History: true,
+              },
+            },
+          },
+        },
+      },
+    });
 
     let gruop_ = await prisma.groupChat.update({
       where: {
@@ -335,9 +414,40 @@ async function removeUser(msg, userId, chatId, groupChatRefId) {
         id: groupChatRefId,
       },
     });
+    let historyToSend = [];
+    await Promise.all(
+      group_.groupChatRef.map(async (ch) => {
+        let historyId = ch.user.History.filter((x) => {
+          return x.workspaceId === group_.workspaceId;
+        });
+        let histroy = await prisma.historyEntryes.create({
+          data: {
+            content: historyMsg,
+            type: group_.type,
+          },
+        });
+        let histtory__ = await prisma.history.update({
+          where: {
+            id: historyId[0].id,
+          },
+          data: {
+            entrys: {
+              connect: {
+                id: histroy.id,
+              },
+            },
+          },
+        });
+        historyToSend.push({
+          history: histroy,
+          userId: ch.user.user.id,
+          historyId: histtory__.id,
+        });
+      })
+    );
     let x = gruop_.msges.at(-1);
     let users = gruop_.groupChatRef;
-    return { x, users };
+    return { x, users, historyToSend };
   } catch (error) {
     console.log(error);
   }
@@ -374,9 +484,67 @@ async function setUnReadToZero(chatRefId) {
     throw error;
   }
 }
-async function delteGroup(groupChatId, groupChatRefs) {
+async function delteGroup(groupChatId, groupChatRefs, name, groupChatName) {
   try {
     let prisma = getDb();
+    let historyMsg = `${name} deleted  ${groupChatName}`;
+    let group__ = await prisma.groupChat.findUnique({
+      where: {
+        id: groupChatId,
+      },
+    });
+
+    let users_ = await prisma.groupChatRef.findMany({
+      where: {
+        id: {
+          in: groupChatRefs,
+        },
+      },
+      include: {
+        user: {
+          include: {
+            user: true,
+            History: true,
+          },
+        },
+      },
+    });
+    // very important do not delete even if it says variable not used,
+    // trust me its a lucky charm .
+    // It's  the solution to all your bugs
+    let x = 0;
+    let historyEntriesToSend = [];
+    await Promise.all(
+      users_.map(async (user) => {
+        let historyId = user.user.History.filter((x) => {
+          return x.workspaceId === group__.workspaceId;
+        })[0].id;
+        let histroy_entry = await prisma.historyEntryes.create({
+          data: {
+            content: historyMsg,
+            type: group__.type,
+          },
+        });
+        let history = await prisma.history.update({
+          where: {
+            id: historyId,
+          },
+          data: {
+            entrys: {
+              connect: {
+                id: histroy_entry.id,
+              },
+            },
+          },
+        });
+        historyEntriesToSend.push({
+          userId: user.user.user.id,
+          history: histroy_entry,
+          historyId: history.id,
+        });
+      })
+    );
+
     await prisma.groupChatRef.deleteMany({
       where: {
         id: {
@@ -389,6 +557,7 @@ async function delteGroup(groupChatId, groupChatRefs) {
         id: groupChatId,
       },
     });
+    return { historyEntriesToSend };
   } catch (error) {
     throw error;
   }
@@ -493,7 +662,9 @@ async function delteFromAllGroup(userId, workspaceId) {
           `${gr.user.user.name} left ${gr.groupChat.name}`,
           userId,
           gr.groupChatId,
-          gr.id
+          gr.id,
+          gr.user.user.name,
+          gr.groupChat.name
         );
         let groupChatMap = {
           users: users,

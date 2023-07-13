@@ -24,13 +24,22 @@ async function newMemeberInWorkspce(
   });
   console.log("sent");
 }
-async function newMemberInGroup(userId, chatId, msg, newUser) {
+async function newMemberInGroup(
+  userId,
+  chatId,
+  msg,
+  newUser,
+  history,
+  historyId
+) {
   try {
     let userChannel = ably_client.channels.get(userId);
     await userChannel.publish("new-memeber-group", {
       chatId,
       msg,
       newUser,
+      history,
+      historyId,
     });
   } catch (error) {
     console.log(error);
@@ -68,7 +77,15 @@ async function removedFromGroup(userId, groupChatRefId) {
   }
 }
 
-async function removeMember(userId, msg, rId, groupId, groupChatRefId) {
+async function removeMember(
+  userId,
+  msg,
+  rId,
+  groupId,
+  groupChatRefId,
+  history,
+  historyId
+) {
   try {
     let userChannel = ably_client.channels.get(userId);
     userChannel.publish("group-remove-member", {
@@ -76,6 +93,8 @@ async function removeMember(userId, msg, rId, groupId, groupChatRefId) {
       rId,
       groupChatRefId: groupChatRefId,
       groupId,
+      history,
+      historyId,
     });
   } catch (error) {
     console.log(error);
@@ -127,11 +146,13 @@ async function updateWorkspace(userId, workSpaceId, workspace) {
     console.log(error);
   }
 }
-async function delelteGroupSender(userId, groupChatId) {
+async function delelteGroupSender(userId, groupChatId, history, historyId) {
   try {
     let userChannel = ably_client.channels.get(userId);
     userChannel.publish("group-delete", {
       groupChatId,
+      history,
+      historyId,
     });
   } catch (error) {
     console.log(error);
@@ -167,6 +188,18 @@ async function deleteWorkspace(userId, workspaceId) {
     console.log(error);
   }
 }
+async function unfriendSender(userId, chatWorkspaceId, workspaceId) {
+  try {
+    let userChannel = ably_client.channels.get(userId);
+    userChannel.publish("unfriend", {
+      userId,
+      chatWorkspaceId,
+      workspaceId,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+}
 export {
   newMemeberInWorkspce,
   newMemeberAdder,
@@ -181,4 +214,5 @@ export {
   delelteGroupSender,
   removeMemberFromWorkspace,
   deleteWorkspace,
+  unfriendSender,
 };

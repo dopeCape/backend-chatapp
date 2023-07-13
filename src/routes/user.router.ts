@@ -19,6 +19,7 @@ import {
   handleRead,
   handleSendBulkInvites,
   handleSetUserData,
+  handleUnfriend,
 } from "../controllers/users.controller";
 
 const userRouter = Router();
@@ -33,6 +34,7 @@ userRouter.post("/email", verifyUser, handleEmailInvtes);
 userRouter.post("/newchat", verifyUser, handleNewChat);
 userRouter.post("/handleread", verifyUser, handleRead);
 userRouter.post("/mute", verifyUser, handleMute);
+userRouter.post("/unfriend", verifyUser, handleUnfriend);
 userRouter.post("/sendbinites", verifyUser, handleSendBulkInvites);
 
 export { userRouter };

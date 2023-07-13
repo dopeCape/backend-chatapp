@@ -65,12 +65,11 @@ const chelckIfArrayExistss = (array, element) => {
 async function handleAddUseToGroup(req, res, next) {
   try {
     let { users, workspaceId, groupChatId, name } = req.body;
-    let { groupChatRefs, group_: groupChat } = await addMemebToGroup(
-      users,
-      workspaceId,
-      groupChatId,
-      name
-    );
+    let {
+      groupChatRefs,
+      group_: groupChat,
+      historyEntriesToSend,
+    } = await addMemebToGroup(users, workspaceId, groupChatId, name);
     let groupChatRefsToSend = [];
     const to_send = ["chatWorkSpaceId", "groupChatId", "id", "unRead", "user"];
     groupChatRefs.forEach((x) => {
@@ -81,25 +80,19 @@ async function handleAddUseToGroup(req, res, next) {
     });
     groupChat.groupChatRef.forEach(async (x) => {
       let { index, y } = chelckIfArrayExistss(groupChatRefs, x);
-      console.log(groupChatRefs[index], index);
       if (y) {
-        // let historyId = groupChatRefs[index].user.History.forEach((x) => {
-        //   if (x.workspaceId === workspaceId) {
-        //     return x.id;
-        //   }
-        // });
-        // await createSingleHistryEntry(
-        //   `you joined ${groupChat.name}`,
-        //   historyId,
-        //   groupChat.type
-        // );
         newGroupChat(groupChatRefs[index].user.user.id, groupChatRefs[index]);
       } else {
+        let history = historyEntriesToSend.find((hr) => {
+          return hr.userId === x.user.user.id;
+        });
         newMemberInGroup(
           x.user.user.id,
           groupChat.id,
           groupChat.msges.at(-1),
-          groupChatRefsToSend
+          groupChatRefsToSend,
+          history.history,
+          history.historyId
         );
       }
     });
@@ -110,14 +103,40 @@ async function handleAddUseToGroup(req, res, next) {
 }
 async function handleRemoveUser(req, res, next) {
   try {
-    let { msg, userid: userId, groupId, userxid, groupChatRefId } = req.body;
+    let {
+      msg,
+      userid: userId,
+      groupId,
+      userxid,
+      groupChatRefId,
+      name,
+      groupName,
+    } = req.body;
 
-    let { x, users } = await removeUser(msg, userId, groupId, groupChatRefId);
+    let { x, users, historyToSend } = await removeUser(
+      msg,
+      userId,
+      groupId,
+      groupChatRefId,
+      name,
+      groupName
+    );
 
     users.forEach((y) => {
       if (y.id === userId) {
       } else {
-        removeMember(y.user.user.id, x, userId, groupId, groupChatRefId);
+        let history = historyToSend.find((x) => {
+          return x.userId === y.user.user.id;
+        });
+        removeMember(
+          y.user.user.id,
+          x,
+          userId,
+          groupId,
+          groupChatRefId,
+          history.history,
+          history.historyId
+        );
       }
     });
     removedFromGroup(userxid, groupChatRefId);
@@ -139,12 +158,25 @@ async function handeSetZero(req, res, next) {
 }
 async function handleDelteGroupChat(req, res, next) {
   try {
-    let { groupChatId, groupChatRefs, users } = req.body;
-    await delteGroup(groupChatId, groupChatRefs);
+    let { groupChatId, groupChatRefs, users, name, groupName } = req.body;
+    let { historyEntriesToSend } = await delteGroup(
+      groupChatId,
+      groupChatRefs,
+      name,
+      groupName
+    );
 
     await Promise.all(
       users.map(async (id) => {
-        await delelteGroupSender(id, groupChatId);
+        let history = historyEntriesToSend.find((x) => {
+          return x.userId === id;
+        });
+        await delelteGroupSender(
+          id,
+          groupChatId,
+          history.history,
+          history.historyId
+        );
       })
     );
     res.send("ok");

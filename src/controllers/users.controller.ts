@@ -198,6 +198,8 @@ import {
   ZeroUnread,
   createInvite,
   createUser,
+  delteFriend,
+  findOtherFriend,
   getInvite,
   getUserData,
   incrementUnread,
@@ -211,6 +213,7 @@ import { addUserToWorkSpace } from "../modules/workspace.module";
 import {
   newMemeberAdder,
   newMemeberInWorkspce,
+  unfriendSender,
 } from "../services/ably.service";
 
 //
@@ -363,6 +366,18 @@ async function handleMute(req, res, next) {
     console.log(error);
   }
 }
+async function handleUnfriend(req, res, next) {
+  try {
+    let { id, uid, friendId, workspaceId, chatId } = req.body;
+    let friendId2 = await findOtherFriend(id, workspaceId);
+    await delteFriend([{ id: friendId }, { id: friendId2.id }], chatId);
+    await unfriendSender(uid, friendId2.chatWorkSpace.id, workspaceId);
+    await unfriendSender(friendId2.chatWorkSpace.user.id, id, workspaceId);
+    res.send("ok");
+  } catch (error) {
+    next(error);
+  }
+}
 
 export {
   handleSetUserData,
@@ -377,4 +392,5 @@ export {
   handleAddUnread,
   handleSendBulkInvites,
   handleMute,
+  handleUnfriend,
 };

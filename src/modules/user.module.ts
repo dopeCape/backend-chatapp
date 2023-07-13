@@ -757,6 +757,34 @@ async function deleteAllFriends(userId, workspaceId) {
     throw error;
   }
 }
+async function findOtherFriend(userId, workspaceId) {
+  try {
+    let prisma = getDb();
+    let otherFriend = await prisma.friend.findFirst({
+      where: {
+        chatWorkSpace: {
+          Friend: {
+            some: {
+              friendId: userId,
+              workspaceId: workspaceId,
+            },
+          },
+        },
+      },
+      include: {
+        chatWorkSpace: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+
+    return otherFriend;
+  } catch (error) {
+    throw error;
+  }
+}
 export {
   createUser,
   getUserData,
@@ -770,4 +798,5 @@ export {
   setMute,
   delteFriend,
   deleteAllFriends,
+  findOtherFriend,
 };
