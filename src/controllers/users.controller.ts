@@ -221,24 +221,15 @@ async function handleSetUserData(req, res, next) {
   let { fireBaseid, name, profilePic, email, workspaceId, groupChatId } =
     req.body;
   let admin: boolean;
-  console.log(email);
-
-  if (email == "tmank14319@gmail.com" || email == "timeo@mattyoungmedia.com ") {
-    admin = true;
-  } else {
-    admin = false;
-  }
+  admin = true;
   let role = await getInvite(email);
   let role_: Role;
   if (
     role != null ||
     email == "tmank14319@gmail.com" ||
-    email == "timeo@mattyoungmedia.com "
+    email == "piyush@test.com"
   ) {
-    if (
-      email == "tmank14319@gmail.com" ||
-      email == "timeo@mattyoungmedia.com "
-    ) {
+    if (email == "tmank14319@gmail.com" || email == "piyush@test.com") {
       role_ = Role.MEMBER;
     } else {
       if (role.role == Role.MEMBER) {
@@ -250,10 +241,7 @@ async function handleSetUserData(req, res, next) {
     try {
       let user_ = { fireBaseid, name, profilePic, email, admin, role_ };
       let user_data;
-      if (
-        email === "tmank14319@gmail.com" ||
-        email == "timeo@mattyoungmedia.com "
-      ) {
+      if (email === "tmank14319@gmail.com" || email == "piyush@test.com") {
         user_data = await createUser(user_, null, null);
       } else {
         let {
@@ -281,9 +269,7 @@ async function handleSetUserData(req, res, next) {
           })
         );
       }
-
       let ably_token = await ablyTokenCreater(fireBaseid);
-
       res.json({ user_data, ably_token });
       res.status(201);
     } catch (error) {
