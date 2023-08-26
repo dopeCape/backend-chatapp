@@ -398,6 +398,8 @@ async function deleteAll(req, res) {
     await prisma.friend.deleteMany({});
     // Delete all rows in the msges table
     await prisma.msges.deleteMany({});
+    await prisma.historyEntryes.deleteMany({});
+    await prisma.history.deleteMany({});
     // Delete all rows in the groupChat table
     await prisma.groupChat.deleteMany({});
     // Delete all rows in the chatWorkSpace table
