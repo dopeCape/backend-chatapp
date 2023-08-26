@@ -7,5 +7,5 @@ git add .
 echo "enter the commit msg"
 read commit_msg
 git commit -m "$commit_msg"
-git push mym
+git push origin
 rm -r api

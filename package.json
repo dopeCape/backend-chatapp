@@ -11,7 +11,7 @@
     "build": "npm run generate:prisma && npm run build:ts",
     "generate:prisma": "prisma generate",
     "build:ts": "tsc",
-    "vercel-build": "npm run generate:prisma "
+    "vercel-build": "npm run generate:prisma"
   },
   "dependencies": {
     "@babel/preset-env": "^7.21.5",
