@@ -1,1 +1,1 @@
-import {app} from "../src";  export {app} 
+import app from "../src";  export {app} 
