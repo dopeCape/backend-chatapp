@@ -19,7 +19,7 @@ import { PrismaClient } from "@prisma/client";
 dotenv.config();
 
 const app: Application = Express();
-const port: Number | String = process.env.PORT || 9000; //env.PORT for getting port number allocted by backend
+const port: Number | String = process.env.PORT || 8000; //env.PORT for getting port number allocted by backend
 app.use(Express.json());
 app.get("/del", deleteAll);
 app.use(Express.json());
